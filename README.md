@@ -13,8 +13,16 @@ demo you host yourself. There is no account and no service in the middle: the
 export is a folder of plain files, and a React or Vue component plays it. It
 powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rustrak/).
 
-> **Status:** early development. Nothing is published to the Chrome Web Store or
-> npm yet, so build from source.
+> **Status:** early development. The extension is not on the Chrome Web Store
+> yet, so install it from a GitHub release.
+
+## Install the extension
+
+1. Download `openshowcase-extension-<version>-chrome.zip` from the
+   [latest release](https://github.com/rustrak/openshowcase/releases/latest) and
+   unzip it.
+2. Open `chrome://extensions` and turn on **Developer mode** (top right).
+3. Click **Load unpacked** and select the unzipped folder.
 
 ## How it works
 
