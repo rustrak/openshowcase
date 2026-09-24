@@ -1,6 +1,7 @@
 <div align="center">
 
-<img width="2000" height="1100" alt="hero" src="UPLOAD-hero.webp" />
+<img width="2000" height="1100" alt="hero" src="https://github.com/user-attachments/assets/41b630da-6a1b-498b-a149-dff5942fd5fb" />
+
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Status](https://img.shields.io/badge/status-early%20development-orange)
@@ -17,7 +18,8 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
 
 ## How it works
 
-<img width="2000" height="900" alt="edit" src="UPLOAD-edit.webp" />
+<img width="2000" height="900" alt="edit" src="https://github.com/user-attachments/assets/d340b260-3378-4bfc-9204-1fe535007b83" />
+
 
 1. **Record.** The Chrome extension captures the tab as video and marks your
    clicks, scrolls and typing.
@@ -26,9 +28,9 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
 3. **Export.** You get a zip with `steps.json`, WebP frames and the WebM
    recording.
 
-<img width="2000" height="640" alt="pixels" src="UPLOAD-pixels.webp" />
+<img width="2000" height="640" alt="pixels" src="https://github.com/user-attachments/assets/13744b3e-9933-491e-90ed-75868ab2fde2" />
 
-<img width="2000" height="1000" alt="export" src="UPLOAD-export.webp" />
+<img width="2000" height="1000" alt="export" src="https://github.com/user-attachments/assets/e93fa6a5-1197-462e-ad87-e28adbb459de" />
 
 ## Embed a demo
 
@@ -44,7 +46,7 @@ The Vue component, `@rustrak/openshowcase-player-vue`, takes the same props.
 Asset paths resolve relative to `steps.json`, so the bundle works from any
 folder. The React player is about 55 KB gzipped, React excluded.
 
-<img width="2000" height="900" alt="embed" src="UPLOAD-embed.webp" />
+<img width="2000" height="900" alt="embed" src="https://github.com/user-attachments/assets/52b8bed2-7fa6-43e7-a4ea-a7c06b0f919b" />
 
 ## Development
 
