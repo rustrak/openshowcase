@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-player-vue",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Vue component for playing OpenShowcase interactive demos",
   "keywords": [
     "openshowcase",
