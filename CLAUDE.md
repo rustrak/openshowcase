@@ -33,7 +33,7 @@ Each workspace has its own `CLAUDE.md` with its build, test and gotcha notes. Re
 ## Releases
 
 - Changesets. Every `@rustrak/openshowcase-*` package and the extension are one `fixed` group: they always share a version.
-- `.github/workflows/release.yml` on push to `main`: pending changesets → opens the "chore: version packages" PR. Merging it → publishes to npm through trusted publishing (OIDC), or with the `NPM_TOKEN` secret while it exists (needed for a package's first publish), then creates the `vX.Y.Z` GitHub release with the extension zip (`openshowcase-extension-<version>-chrome.zip`) attached. The release body comes from `scripts/release-notes.mjs`.
+- `.github/workflows/release.yml` on push to `main`: pending changesets → opens the "chore: version packages" PR. Merging it → publishes to npm with the `NPM_TOKEN` secret (`pnpm release`), then creates the `vX.Y.Z` GitHub release with the extension zip (`openshowcase-extension-<version>-chrome.zip`) attached. The release body comes from `scripts/release-notes.mjs`.
 
 ## Dependencies
 
