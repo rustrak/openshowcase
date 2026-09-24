@@ -8,6 +8,8 @@ Run from the repo root (Turborepo fans out to every workspace):
 
 - `pnpm build` / `pnpm check-types` / `pnpm test` / `pnpm size`
 - `pnpm lint` / `pnpm format`: Biome check / check with `--write`
+- `pnpm ci`: what CI runs on every PR (`biome ci` + build, types, tests, size)
+- `pnpm changeset`: add a changeset. CI fails on a PR that changes a package without one (`pnpm changeset --empty` for changes that release nothing)
 - One package: `pnpm --filter @rustrak/openshowcase-<name> <script>`
 - Extension dev: `pnpm --filter @rustrak/openshowcase-extension dev`, then load `apps/extension/.output/chrome-mv3` unpacked in `chrome://extensions`
 
@@ -27,6 +29,11 @@ Each workspace has its own `CLAUDE.md` with its build, test and gotcha notes. Re
 - Put non-trivial orchestration and state-machine logic in plain, unit-tested TS under `core/`-style directories. Keep components to markup + wiring (see `packages/player-core/CLAUDE.md`).
 - No analytics, telemetry or calls to external services. The project is self-hosted by design.
 - Commits: Conventional Commits in English (`feat(extension): …`). The Lefthook pre-commit hook runs `biome check --write` on staged files. Never bypass it with `--no-verify`.
+
+## Releases
+
+- Changesets. Every `@rustrak/openshowcase-*` package and the extension are one `fixed` group: they always share a version.
+- `.github/workflows/release.yml` on push to `main`: pending changesets → opens the "chore: version packages" PR. Merging it → publishes to npm through trusted publishing (OIDC), or with the `NPM_TOKEN` secret while it exists (needed for a package's first publish), then creates the `vX.Y.Z` GitHub release with the extension zip (`openshowcase-extension-<version>-chrome.zip`) attached. The release body comes from `scripts/release-notes.mjs`.
 
 ## Dependencies
 

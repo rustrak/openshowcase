@@ -1,0 +1,16 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": [
+    "@changesets/changelog-github",
+    { "repo": "rustrak/openshowcase" }
+  ],
+  "commit": false,
+  "format": false,
+  "fixed": [["@rustrak/openshowcase-*"]],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "privatePackages": { "version": true, "tag": false },
+  "updateInternalDependencies": "patch",
+  "ignore": []
+}

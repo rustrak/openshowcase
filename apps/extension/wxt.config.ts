@@ -13,4 +13,8 @@ export default defineConfig({
     permissions: ["storage", "tabs", "tabCapture", "offscreen"],
     host_permissions: ["<all_urls>"],
   },
+  // Attached to every GitHub release (see .github/workflows/release.yml).
+  zip: {
+    artifactTemplate: "openshowcase-extension-{{version}}-{{browser}}.zip",
+  },
 });

@@ -1,6 +1,7 @@
 {
   "name": "@rustrak/openshowcase-extension",
   "description": "OpenShowcase: record, edit and export self-hosted interactive demos",
+  "author": "AbianS",
   "private": true,
   "version": "0.0.0",
   "type": "module",

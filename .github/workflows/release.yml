@@ -1,0 +1,191 @@
+name: Release
+
+# Every push to main runs this, and changesets decides what happens:
+#
+# - `version`: there are pending changesets. Open or update the
+#   "chore: version packages" PR, which bumps every package (one `fixed` group,
+#   see .changeset/config.json) and writes the changelogs.
+# - `publish`: that PR was just merged, so the versions in package.json are not
+#   on npm yet. Build, pack and publish to npm, then cut the `vX.Y.Z` GitHub
+#   release with the Chrome extension zip attached.
+# - `none`: nothing to do.
+#
+# Jobs are split so each one holds only the permissions it needs. Nothing that
+# runs install or build scripts gets `id-token: write`: `pack` builds the
+# tarballs without it, and `publish` only uploads them to npm through trusted
+# publishing (OIDC), or with the NPM_TOKEN secret while it exists.
+
+on:
+  push:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  select-mode:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
+      publish-plan-artifact-id: ${{ steps.select-mode.outputs.publish-plan-artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - id: select-mode
+        uses: changesets/action/select-mode@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+
+  version:
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'version'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      # Opened with GITHUB_TOKEN, so the PR does not trigger ci.yml. That is
+      # fine: ci.yml skips `changeset-release/*` branches anyway, since the PR
+      # only carries version bumps and changelogs.
+      - uses: changesets/action/version@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
+
+  pack:
+    needs: select-mode
+    if: needs.select-mode.outputs.mode == 'publish'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      pack-dir-artifact-id: ${{ steps.pack.outputs.pack-dir-artifact-id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      # Tarballs via `pnpm pack`, which rewrites `workspace:*` to exact versions.
+      - id: pack
+        uses: changesets/action/pack@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          publish-plan-artifact-id: ${{ needs.select-mode.outputs.publish-plan-artifact-id }}
+
+  publish:
+    needs: pack
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm trusted publishing + provenance
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+    env:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      # Only for the changesets CLI. The tarballs come prebuilt from `pack`.
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Token fallback for publishing a package that does not exist on npm yet:
+      # trusted publishing can only be configured on an existing package. Once
+      # every package has a trusted publisher, delete the NPM_TOKEN secret and
+      # this step is skipped. The token goes in the user config because pnpm
+      # does not expand env vars in a project `.npmrc`.
+      - name: Authenticate to npm with NPM_TOKEN
+        if: ${{ env.NPM_TOKEN != '' }}
+        run: echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" >> ~/.npmrc
+      # Tags and the GitHub release are cut by `github-release` below: one
+      # `vX.Y.Z` release for the whole fixed group instead of one per package.
+      - id: publish
+        uses: changesets/action/publish@ae32849d5ba541f9ae29e40e22a623bc13562f51 # v2.1.2
+        with:
+          pack-dir-artifact-id: ${{ needs.pack.outputs.pack-dir-artifact-id }}
+          create-github-releases: false
+          push-git-tags: false
+
+  github-release:
+    needs: publish
+    if: needs.publish.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+
+      # The extension bundles the workspace packages, so build those first.
+      # `wxt zip` builds the extension itself and writes
+      # `.output/openshowcase-extension-<version>-chrome.zip` (see wxt.config.ts).
+      - name: Build the extension zip
+        run: |
+          pnpm turbo run build --filter=@rustrak/openshowcase-extension^...
+          pnpm --filter @rustrak/openshowcase-extension zip
+
+      # --target creates the tag together with the release, so a failed call
+      # leaves no orphaned tag behind and a re-run starts clean.
+      # --generate-notes appends GitHub's PR and contributor list to the body.
+      - name: Create the GitHub release
+        run: |
+          set -euo pipefail
+          VERSION=$(node -p "require('./apps/extension/package.json').version")
+          TAG="v$VERSION"
+
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists, nothing to do"
+            exit 0
+          fi
+
+          node scripts/release-notes.mjs > "$RUNNER_TEMP/notes.md"
+
+          PRERELEASE_FLAG=--latest
+          if [[ "$VERSION" == *-* ]]; then
+            PRERELEASE_FLAG=--prerelease
+          fi
+
+          gh release create "$TAG" \
+            "apps/extension/.output/openshowcase-extension-$VERSION-chrome.zip" \
+            --target "$GITHUB_SHA" \
+            --title "OpenShowcase $TAG" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --generate-notes \
+            "$PRERELEASE_FLAG"
+        env:
+          GH_TOKEN: ${{ github.token }}

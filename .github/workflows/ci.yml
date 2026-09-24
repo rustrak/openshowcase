@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  # Every pull request, whatever it targets. A `branches` filter would match the
+  # PR's base, so a stacked PR would merge with no checks at all.
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    # Skip the "chore: version packages" PR opened by release.yml. It only bumps
+    # versions and writes changelogs from commits that already passed CI. A job
+    # skipped by `if` still reports success to branch protection. The same-repo
+    # check stops a fork from skipping CI by naming its branch the same way.
+    if: ${{ !(startsWith(github.head_ref, 'changeset-release/') && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Full history so `changeset status` can diff against the base branch.
+          fetch-depth: 0
+          persist-credentials: false
+
+      # Reads the pnpm version from `packageManager` in package.json.
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # `playwright` is an npm dependency, but the Chromium it drives is a
+      # separate download. player-core and exporter run their tests in a real
+      # browser, so without it the suites fail at `browserType.launch`. Keyed on
+      # the lockfile, which pins the Playwright version.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: playwright-${{ runner.os }}-
+      # A no-op on a cache hit. `--with-deps` also installs the system libraries.
+      - run: pnpm --filter @rustrak/openshowcase-player-core exec playwright install --with-deps chromium
+
+      # Biome (lint + format), then build, types, tests and bundle size via Turbo.
+      - run: pnpm run ci
+
+      # Fails if a package changed without a changeset. Changes that must not
+      # release anything (docs, CI) can add an empty one: `pnpm changeset --empty`.
+      - name: Check for a changeset
+        run: pnpm changeset status --since="origin/${{ github.base_ref }}"
