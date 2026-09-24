@@ -1,0 +1,204 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/*
+ * OpenShowcase UI theme. Shares its identity with Rustrak (same makers): the brand
+ * lime `#C5F11E` (lime-400, identical in both modes, dark text on top), pure
+ * zero-chroma neutrals, and Geist + Geist Mono self-hosted — no CDN, the
+ * extension never calls external services. Values mirror the Rustrak brand
+ * tokens; never hardcode colors in components, go through these tokens.
+ *
+ * Surfaces follow a "floating cards on a window" model: `--window` is the app
+ * backdrop, `--card` the panels, `--stage` the recessed well the demo sits in,
+ * `--popover` anything that floats above a card.
+ */
+
+@custom-variant dark (&:is(.dark *));
+
+@font-face {
+  font-family: "Geist";
+  src: url("./fonts/geist-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Geist Mono";
+  src: url("./fonts/geist-mono-variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans:
+    "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Dense tool-UI type scale: 11 (captions, kbd) / 12 (secondary) / 13 (body, controls). */
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.25rem;
+
+  /* Motion: one strong ease-out for things entering/leaving, one ease-in-out for things
+     already on screen that move (sliding indicators, playhead jumps). Hover/press keep
+     Tailwind's default 150ms clock, same as Rustrak's buttons. */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+@theme inline {
+  --color-window: var(--window);
+  --color-stage: var(--stage);
+  --color-brand-text: var(--brand-text);
+  --color-brand-ink: var(--brand-ink);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --shadow-card: var(--elevation-card);
+  --shadow-float: var(--elevation-float);
+  --shadow-lift: var(--elevation-lift);
+}
+
+:root {
+  --radius: 0.625rem;
+
+  /* Brand: lime-400 on every theme, near-black text on top. */
+  --primary: oklch(0.8952 0.2124 122.25);
+  --primary-foreground: oklch(0.1 0 0);
+  /* Lime used AS text/icon on a light surface needs weight to stay legible (lime-800). */
+  --brand-text: oklch(0.52 0.14 122.25);
+  /* Rustrak's dark canvas (neutral-950) — brand panels are dark in both themes. */
+  --brand-ink: oklch(0.1543 0 0);
+
+  --window: oklch(0.955 0 0);
+  --stage: oklch(0.935 0 0);
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.1543 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.1543 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.1543 0 0);
+
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.1543 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.5 0 0);
+  --accent: oklch(0.955 0 0);
+  --accent-foreground: oklch(0.1543 0 0);
+
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.9 0 0);
+  --ring: oklch(0.74 0.2 122.25);
+  --destructive: oklch(0.58 0.2 25);
+
+  /* Layered shadows: a hairline ring instead of a border, plus ambient + direct light. */
+  --elevation-card:
+    0 0 0 1px oklch(0 0 0 / 0.05), 0 1px 2px oklch(0 0 0 / 0.04);
+  --elevation-float:
+    0 0 0 1px oklch(0 0 0 / 0.06), 0 2px 4px oklch(0 0 0 / 0.04),
+    0 12px 32px -8px oklch(0 0 0 / 0.16);
+  --elevation-lift:
+    0 0 0 1px oklch(0 0 0 / 0.06), 0 8px 16px -4px oklch(0 0 0 / 0.12),
+    0 24px 48px -12px oklch(0 0 0 / 0.22);
+
+  color-scheme: light;
+}
+
+.dark {
+  --brand-text: oklch(0.8952 0.2124 122.25);
+
+  --window: oklch(0.145 0 0);
+  --stage: oklch(0.12 0 0);
+  --background: oklch(0.19 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.19 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.225 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+
+  --secondary: oklch(0.25 0 0);
+  --secondary-foreground: oklch(0.97 0 0);
+  --muted: oklch(0.24 0 0);
+  --muted-foreground: oklch(0.66 0 0);
+  --accent: oklch(0.25 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+
+  --border: oklch(0.27 0 0);
+  --input: oklch(0.3 0 0);
+  --ring: oklch(0.8952 0.2124 122.25);
+  --destructive: oklch(0.66 0.19 25);
+
+  /* Shadows barely read on dark: elevation is a lighter surface plus a white hairline. */
+  --elevation-card: 0 0 0 1px oklch(1 0 0 / 0.06), 0 1px 2px oklch(0 0 0 / 0.4);
+  --elevation-float:
+    0 0 0 1px oklch(1 0 0 / 0.08), 0 2px 4px oklch(0 0 0 / 0.3),
+    0 12px 32px -8px oklch(0 0 0 / 0.6);
+  --elevation-lift:
+    0 0 0 1px oklch(1 0 0 / 0.1), 0 8px 16px -4px oklch(0 0 0 / 0.5),
+    0 24px 48px -12px oklch(0 0 0 / 0.7);
+
+  color-scheme: dark;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 45%, transparent);
+  }
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}

@@ -1,0 +1,319 @@
+/*
+ * The player's hotspot + tooltip look, mirrored for the editor stage so what you edit is what
+ * ships. Source of truth: packages/player-core/src/components/{Hotspot,Tooltip,PhotoLayer}.svelte
+ * and packages/player-core/src/app.css (the --wd-* tokens). Keep the two in sync — these are
+ * demo visuals, not editor UI, which is why they use literal colors instead of theme tokens.
+ */
+
+.wd-scope {
+  container-type: inline-size;
+  --wd-u: clamp(12px, calc(10px + 0.5cqw), 17px);
+  --wd-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --wd-spring-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --wd-spring-tip: cubic-bezier(0.23, 1, 0.32, 1);
+  font-family:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------- hotspot -- */
+
+.wd-hotspot {
+  position: absolute;
+  z-index: 20;
+  width: max(44px, calc(var(--wd-u) * 3));
+  height: max(44px, calc(var(--wd-u) * 3));
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  outline: none;
+}
+.wd-dot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  transition: scale 420ms var(--wd-spring-pop);
+}
+.wd-hotspot--appear .wd-dot {
+  animation: wd-pop 480ms var(--wd-spring-pop) both;
+}
+.wd-hotspot:hover .wd-dot,
+.wd-hotspot:focus-visible .wd-dot {
+  scale: 1.15;
+}
+.wd-hotspot--dragging .wd-dot {
+  scale: 1.1;
+}
+.wd-halo,
+.wd-ripple,
+.wd-core {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.wd-halo {
+  width: calc(var(--wd-u) * 2);
+  height: calc(var(--wd-u) * 2);
+  background: color-mix(in srgb, var(--openshowcase-color) 22%, transparent);
+  transition: background-color 250ms ease;
+}
+.wd-hotspot:hover .wd-halo {
+  background: color-mix(in srgb, var(--openshowcase-color) 32%, transparent);
+}
+.wd-ripple {
+  width: calc(var(--wd-u) * 2.25);
+  height: calc(var(--wd-u) * 2.25);
+  border: 1.5px solid
+    color-mix(in srgb, var(--openshowcase-color) 70%, transparent);
+  background: radial-gradient(
+    circle,
+    transparent 40%,
+    color-mix(in srgb, var(--openshowcase-color) 30%, transparent) 100%
+  );
+  opacity: 0;
+  animation: wd-ripple 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+.wd-ripple--late {
+  animation-delay: 0.9s;
+}
+.wd-hotspot:hover .wd-ripple,
+.wd-hotspot--dragging .wd-ripple {
+  animation-play-state: paused;
+  opacity: 0;
+}
+.wd-core {
+  width: calc(var(--wd-u) * 1.125);
+  height: calc(var(--wd-u) * 1.125);
+  background:
+    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.55), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in oklab, var(--openshowcase-color) 85%, white),
+      var(--openshowcase-color) 55%,
+      color-mix(in oklab, var(--openshowcase-color) 90%, black)
+    );
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3px rgb(0 0 0 / 0.22),
+    0 2px 6px rgb(0 0 0 / 0.28);
+  animation: wd-breathe 1.8s ease-in-out infinite;
+}
+.wd-hotspot:hover .wd-core,
+.wd-hotspot--dragging .wd-core {
+  animation-play-state: paused;
+}
+.wd-hotspot:focus-visible .wd-core {
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 3px rgb(0 0 0 / 0.22),
+    0 0 0 6px color-mix(in srgb, var(--openshowcase-color) 55%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.28);
+}
+
+@keyframes wd-pop {
+  from {
+    scale: 0.4;
+    opacity: 0;
+  }
+}
+@keyframes wd-ripple {
+  0% {
+    scale: 0.5;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.6;
+  }
+  100% {
+    scale: 1.7;
+    opacity: 0;
+  }
+}
+@keyframes wd-breathe {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 0.88;
+  }
+}
+
+/* ---------------------------------------------------------------- tooltip -- */
+
+.wd-tooltip {
+  position: absolute;
+  z-index: 10;
+  width: max-content;
+  min-width: calc(var(--wd-u) * 4);
+  max-width: min(calc(var(--wd-u) * 18), 300px);
+  padding: calc(var(--wd-u) * 0.7) calc(var(--wd-u) * 0.9);
+  border-radius: calc(var(--wd-u) * 0.65);
+  font-size: calc(var(--wd-u) * 0.875);
+  font-weight: 500;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+  isolation: isolate;
+  animation: wd-tip-in 440ms var(--wd-spring-tip) both;
+}
+.wd-tooltip--side-top {
+  --wd-from: 0 6px;
+  transform-origin: var(--wd-arrow) 100%;
+}
+.wd-tooltip--side-bottom {
+  --wd-from: 0 -6px;
+  transform-origin: var(--wd-arrow) 0;
+}
+.wd-tooltip--side-left {
+  --wd-from: 6px 0;
+  transform-origin: 100% var(--wd-arrow);
+}
+.wd-tooltip--side-right {
+  --wd-from: -6px 0;
+  transform-origin: 0 var(--wd-arrow);
+}
+@keyframes wd-tip-in {
+  from {
+    opacity: 0;
+    translate: var(--wd-from, 0 0);
+    scale: 0.94;
+  }
+}
+
+/* the body: box + tail as one SVG outline (see HotspotLayer / player's Tooltip.svelte) */
+.wd-body {
+  position: absolute;
+  inset: 0 auto auto 0;
+  z-index: -1;
+  overflow: visible;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 1px rgb(17 24 39 / 0.1))
+    drop-shadow(0 4px 8px rgb(17 24 39 / 0.1))
+    drop-shadow(0 14px 28px rgb(17 24 39 / 0.14));
+}
+.wd-rim {
+  fill: none;
+  stroke-width: 2px;
+}
+.wd-edge {
+  fill: none;
+  stroke: rgb(0 0 0 / 0.16);
+  stroke-width: 1px;
+}
+
+/* dim the frame except a soft pool of light around the hotspot, like the player: a long,
+   smoothstep-like falloff, gathering in place when it appears */
+@property --wd-spot-k {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+.wd-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  --wd-spot-r: calc(var(--wd-u) * 1.5 * var(--wd-spot-k));
+  background: radial-gradient(
+    circle at var(--wd-spot-x) var(--wd-spot-y),
+    rgb(12 14 20 / 0) calc(var(--wd-spot-r) * 1),
+    rgb(12 14 20 / 0.015) calc(var(--wd-spot-r) * 1.5),
+    rgb(12 14 20 / 0.05) calc(var(--wd-spot-r) * 2.2),
+    rgb(12 14 20 / 0.1) calc(var(--wd-spot-r) * 3.2),
+    rgb(12 14 20 / 0.16) calc(var(--wd-spot-r) * 4.6),
+    rgb(12 14 20 / 0.21) calc(var(--wd-spot-r) * 6.5),
+    rgb(12 14 20 / 0.24) calc(var(--wd-spot-r) * 9)
+  );
+  animation: wd-light-in 900ms cubic-bezier(0.33, 1, 0.68, 1) both;
+}
+@keyframes wd-light-in {
+  from {
+    opacity: 0;
+    --wd-spot-k: 1.6;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wd-dot,
+  .wd-halo {
+    transition: none;
+  }
+  .wd-hotspot--appear .wd-dot,
+  .wd-core,
+  .wd-tooltip,
+  .wd-spotlight {
+    animation: none;
+  }
+  .wd-ripple {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Real spring curves where linear() easing is supported; the cubic-beziers above are the fallback. */
+@supports (transition-timing-function: linear(0, 1)) {
+  .wd-scope {
+    --wd-spring-pop: linear(
+      0,
+      0.094,
+      0.28,
+      0.489,
+      0.679,
+      0.83,
+      0.938,
+      1.006,
+      1.042,
+      1.055,
+      1.054,
+      1.046,
+      1.034,
+      1.023,
+      1.013,
+      1.006,
+      1.001,
+      0.998,
+      0.997,
+      0.997,
+      0.997,
+      0.998,
+      0.998,
+      0.999,
+      0.999,
+      1
+    );
+    --wd-spring-tip: linear(
+      0,
+      0.062,
+      0.186,
+      0.331,
+      0.474,
+      0.602,
+      0.709,
+      0.795,
+      0.861,
+      0.91,
+      0.945,
+      0.969,
+      0.985,
+      0.995,
+      1.001,
+      1.004,
+      1.005,
+      1.005,
+      1.005,
+      1.004,
+      1.003,
+      1.003,
+      1.002,
+      1.001,
+      1.001,
+      1
+    );
+  }
+}

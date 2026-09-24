@@ -1,0 +1,24 @@
+{
+  "name": "openshowcase",
+  "private": true,
+  "scripts": {
+    "prepare": "lefthook install",
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "biome check .",
+    "test": "turbo run test",
+    "size": "turbo run size",
+    "format": "biome check --write .",
+    "check-types": "turbo run check-types"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.14",
+    "lefthook": "2.1.14",
+    "turbo": "2.11.3",
+    "typescript": "6.0.3"
+  },
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": "^22.19.0 || ^24.5.0 || >=26.0.0"
+  }
+}

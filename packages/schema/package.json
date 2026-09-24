@@ -1,0 +1,62 @@
+{
+  "name": "@rustrak/openshowcase-schema",
+  "version": "0.0.0",
+  "description": "Zod schema and TypeScript types for the OpenShowcase interactive demo format",
+  "keywords": [
+    "openshowcase",
+    "interactive-demo",
+    "product-demo",
+    "product-tour",
+    "schema",
+    "zod"
+  ],
+  "license": "MIT",
+  "author": "Abian Suarez",
+  "homepage": "https://github.com/rustrak/openshowcase/tree/main/packages/schema#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustrak/openshowcase.git",
+    "directory": "packages/schema"
+  },
+  "bugs": {
+    "url": "https://github.com/rustrak/openshowcase/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "check-types": "tsc --noEmit",
+    "size": "size-limit"
+  },
+  "dependencies": {
+    "zod": "4.6.5"
+  },
+  "size-limit": [
+    {
+      "name": "dist/index.js (brotli)",
+      "path": "dist/index.js",
+      "limit": "3 KB"
+    }
+  ],
+  "devDependencies": {
+    "@rslib/core": "1.0.1",
+    "@size-limit/file": "14.0.0",
+    "size-limit": "14.0.0",
+    "typescript": "6.0.3"
+  }
+}

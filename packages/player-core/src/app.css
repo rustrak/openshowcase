@@ -1,0 +1,169 @@
+/* The player is embedded in other people's pages, so it must neither leak styles out nor
+   depend on the host's. Only Tailwind's theme + utilities are pulled in — no preflight: its
+   global element reset (`*, h1, img, button…`) would restyle the whole host page. The few
+   resets the player needs are scoped under `.openshowcase-player` below. Visual pieces that must
+   survive hostile host CSS (hotspot, tooltip, navbar) are styled in their components'
+   scoped, unlayered `<style>` blocks rather than with layered utilities. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* The player's dark/light appearance is an explicit theme choice (`Demo.theme.appearance`),
+   not the OS color-scheme preference, so `dark:` targets the `.openshowcase-player--dark` ancestor
+   class the root element carries — not `prefers-color-scheme`. */
+@custom-variant dark (
+  &:where(.openshowcase-player--dark, .openshowcase-player--dark *)
+);
+
+/* Scale of the spotlight's pool of light, animated by its in/out transitions (registered so
+   the keyframes interpolate instead of flipping). */
+@property --wd-spot-k {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+@layer base {
+  .openshowcase-player,
+  .openshowcase-player *,
+  .openshowcase-player *::before,
+  .openshowcase-player *::after {
+    box-sizing: border-box;
+    /* what preflight would have done, scoped: utilities like `border-b` only set a width */
+    border: 0 solid;
+  }
+
+  .openshowcase-player {
+    /* Everything in the overlay is sized in --wd-u, which grows with the player's width
+       (≈14px at 800px wide, 16px at 1200px) — a hotspot or tooltip designed for a big embed
+       doesn't swamp a small one, and vice versa. */
+    container-type: inline-size;
+    --wd-u: clamp(12px, calc(10px + 0.5cqw), 17px);
+
+    /* Motion tokens. The springs are CSS linear() curves precomputed from a mass-spring
+       simulation (stiffness/damping in the name), set in the @supports block at the end; the
+       cubic-beziers here are the fallback for engines without linear(). */
+    --wd-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --wd-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    /* 170/22 — ~700ms, 0.7% overshoot: hotspot gliding between steps */
+    --wd-spring-glide: cubic-bezier(0.22, 1, 0.36, 1);
+    /* 500/30 — ~480ms, 5.6% overshoot: hotspot pop-in, hover/press */
+    --wd-spring-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* 400/34 — ~440ms, 0.5% overshoot: tooltip entrance */
+    --wd-spring-tip: cubic-bezier(0.23, 1, 0.32, 1);
+
+    font-family:
+      ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+      "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .openshowcase-player button {
+    font: inherit;
+    color: inherit;
+    margin: 0;
+    padding: 0;
+    background: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .openshowcase-player img,
+  .openshowcase-player video {
+    max-width: none;
+  }
+}
+@layer base {
+  @supports (transition-timing-function: linear(0, 1)) {
+    .openshowcase-player {
+      --wd-spring-glide: linear(
+        0,
+        0.05,
+        0.156,
+        0.285,
+        0.418,
+        0.542,
+        0.65,
+        0.741,
+        0.814,
+        0.871,
+        0.914,
+        0.946,
+        0.969,
+        0.984,
+        0.995,
+        1.001,
+        1.004,
+        1.006,
+        1.007,
+        1.006,
+        1.006,
+        1.005,
+        1.004,
+        1.003,
+        1.002,
+        1.002,
+        1.001,
+        1.001,
+        1.001,
+        1
+      );
+      --wd-spring-pop: linear(
+        0,
+        0.094,
+        0.28,
+        0.489,
+        0.679,
+        0.83,
+        0.938,
+        1.006,
+        1.042,
+        1.055,
+        1.054,
+        1.046,
+        1.034,
+        1.023,
+        1.013,
+        1.006,
+        1.001,
+        0.998,
+        0.997,
+        0.997,
+        0.997,
+        0.998,
+        0.998,
+        0.999,
+        0.999,
+        1
+      );
+      --wd-spring-tip: linear(
+        0,
+        0.062,
+        0.186,
+        0.331,
+        0.474,
+        0.602,
+        0.709,
+        0.795,
+        0.861,
+        0.91,
+        0.945,
+        0.969,
+        0.985,
+        0.995,
+        1.001,
+        1.004,
+        1.005,
+        1.005,
+        1.005,
+        1.004,
+        1.003,
+        1.003,
+        1.002,
+        1.001,
+        1.001,
+        1
+      );
+    }
+  }
+}

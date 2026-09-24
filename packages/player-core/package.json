@@ -1,0 +1,73 @@
+{
+  "name": "@rustrak/openshowcase-player-core",
+  "version": "0.0.0",
+  "description": "Framework-agnostic player for OpenShowcase interactive demos",
+  "keywords": [
+    "openshowcase",
+    "interactive-demo",
+    "product-demo",
+    "product-tour",
+    "player"
+  ],
+  "license": "MIT",
+  "author": "Abian Suarez",
+  "homepage": "https://github.com/rustrak/openshowcase/tree/main/packages/player-core#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustrak/openshowcase.git",
+    "directory": "packages/player-core"
+  },
+  "bugs": {
+    "url": "https://github.com/rustrak/openshowcase/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vite build && dts-bundle-generator -o dist/index.d.ts --project tsconfig.json --disable-symlinks-following --external-imports @rustrak/openshowcase-schema -- src/index.ts",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "size": "size-limit"
+  },
+  "dependencies": {
+    "@rustrak/openshowcase-schema": "workspace:*"
+  },
+  "size-limit": [
+    {
+      "name": "dist/index.js (brotli)",
+      "path": "dist/index.js",
+      "limit": "35 KB"
+    }
+  ],
+  "devDependencies": {
+    "@size-limit/file": "14.0.0",
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tailwindcss/vite": "4.3.3",
+    "@vitest/browser": "5.0.1",
+    "@vitest/browser-playwright": "5.0.1",
+    "@vitest/ui": "5.0.1",
+    "dts-bundle-generator": "9.5.1",
+    "playwright": "1.63.0",
+    "size-limit": "14.0.0",
+    "svelte": "5.57.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "vite": "8.3.0",
+    "vite-plugin-css-injected-by-js": "5.0.2",
+    "vitest": "5.0.1",
+    "vitest-browser-svelte": "3.1.0"
+  }
+}

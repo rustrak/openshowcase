@@ -1,0 +1,69 @@
+{
+  "name": "@rustrak/openshowcase-exporter",
+  "version": "0.0.0",
+  "description": "Builds the exportable zip bundle of an OpenShowcase interactive demo in the browser",
+  "keywords": [
+    "openshowcase",
+    "interactive-demo",
+    "product-demo",
+    "product-tour",
+    "exporter",
+    "zip"
+  ],
+  "license": "MIT",
+  "author": "Abian Suarez",
+  "homepage": "https://github.com/rustrak/openshowcase/tree/main/packages/exporter#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustrak/openshowcase.git",
+    "directory": "packages/exporter"
+  },
+  "bugs": {
+    "url": "https://github.com/rustrak/openshowcase/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rslib build",
+    "dev": "rslib build --watch",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "size": "size-limit"
+  },
+  "dependencies": {
+    "@rustrak/openshowcase-schema": "workspace:*",
+    "jszip": "3.10.2"
+  },
+  "size-limit": [
+    {
+      "name": "dist/index.js (brotli)",
+      "path": "dist/index.js",
+      "limit": "3 KB"
+    }
+  ],
+  "devDependencies": {
+    "@rslib/core": "1.0.1",
+    "@size-limit/file": "14.0.0",
+    "@vitest/browser": "5.0.1",
+    "@vitest/browser-playwright": "5.0.1",
+    "playwright": "1.63.0",
+    "size-limit": "14.0.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "name": "@rustrak/openshowcase-player-vue",
+  "version": "0.0.0",
+  "description": "Vue component for playing OpenShowcase interactive demos",
+  "keywords": [
+    "openshowcase",
+    "interactive-demo",
+    "product-demo",
+    "product-tour",
+    "player",
+    "vue"
+  ],
+  "license": "MIT",
+  "author": "Abian Suarez",
+  "homepage": "https://github.com/rustrak/openshowcase/tree/main/adapters/player-vue#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustrak/openshowcase.git",
+    "directory": "adapters/player-vue"
+  },
+  "bugs": {
+    "url": "https://github.com/rustrak/openshowcase/issues"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "sideEffects": false,
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "rslib build && vue-tsc -p tsconfig.json --declaration --emitDeclarationOnly --noEmit false --outDir dist",
+    "dev": "rslib build --watch",
+    "check-types": "vue-tsc --noEmit",
+    "size": "size-limit"
+  },
+  "dependencies": {
+    "@rustrak/openshowcase-player-core": "workspace:*",
+    "@rustrak/openshowcase-schema": "workspace:*"
+  },
+  "peerDependencies": {
+    "vue": ">=3.3"
+  },
+  "size-limit": [
+    {
+      "name": "dist/index.js (brotli)",
+      "path": "dist/index.js",
+      "limit": "5 KB"
+    }
+  ],
+  "devDependencies": {
+    "@rsbuild/plugin-vue": "2.0.1",
+    "@rslib/core": "1.0.1",
+    "@size-limit/file": "14.0.0",
+    "@vue/language-core": "3.3.11",
+    "size-limit": "14.0.0",
+    "typescript": "6.0.3",
+    "vue": "3.5.43",
+    "vue-tsc": "3.3.11"
+  }
+}

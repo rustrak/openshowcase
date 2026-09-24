@@ -1,0 +1,20 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+  - "adapters/*"
+
+# Dependencies allowed to run install scripts (pnpm 11+ fails the install on unlisted ones).
+allowBuilds:
+  lefthook: true # installs the git hooks (also done by the root "prepare" script)
+  esbuild: true # verifies its platform binary
+  spawn-sync: false # legacy postinstall pulled in by wxt > web-ext-run
+
+minimumReleaseAgeExclude:
+  - '@sveltejs/vite-plugin-svelte@7.3.1'
+  - '@turbo/darwin-64@2.11.3'
+  - '@turbo/darwin-arm64@2.11.3'
+  - '@turbo/linux-64@2.11.3'
+  - '@turbo/linux-arm64@2.11.3'
+  - '@turbo/windows-64@2.11.3'
+  - '@turbo/windows-arm64@2.11.3'
+  - turbo@2.11.3
