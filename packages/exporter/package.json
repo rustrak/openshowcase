@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-exporter",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Builds the exportable zip bundle of an OpenShowcase interactive demo in the browser",
   "keywords": [
     "openshowcase",

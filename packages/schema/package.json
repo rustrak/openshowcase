@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-schema",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Zod schema and TypeScript types for the OpenShowcase interactive demo format",
   "keywords": [
     "openshowcase",
