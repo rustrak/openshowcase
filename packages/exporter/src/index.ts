@@ -6,7 +6,10 @@ export { blobToWebp } from "./image";
 
 export interface BuildDemoBundleOptions {
   demo: Demo;
-  /** Continuous recording (webm). Only needed if the demo has video steps. */
+  /**
+   * The video the demo's video steps play (webm or mp4, named after its type). Only needed if
+   * the demo has video steps.
+   */
   videoBlob?: Blob;
   /** Frame of each photo step, keyed by step id. */
   imageBlobs: Map<string, Blob>;
@@ -49,8 +52,9 @@ export async function buildDemoBundle({
 
   let video = demo.video;
   if (video && videoBlob) {
-    assets.file("recording.webm", videoBlob);
-    video = { ...video, src: "assets/recording.webm" };
+    const filename = `recording.${videoBlob.type.includes("mp4") ? "mp4" : "webm"}`;
+    assets.file(filename, videoBlob);
+    video = { ...video, src: `assets/${filename}` };
   } else if (!videoBlob) {
     video = undefined;
   }

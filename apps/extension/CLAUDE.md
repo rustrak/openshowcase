@@ -38,6 +38,8 @@ WXT + React Chrome extension (MV3) with two jobs: **capture** (continuous tab vi
 - Pointer gestures keep a local draft and commit once on release (`lib/pointer-drag.ts`): one undo step per gesture, and no React re-render per pointer move.
 - The playhead and timecode write to the DOM directly from `hooks/use-clip-playback.ts`. The stage stays mounted in Preview because it owns the `<video>`.
 - `components/stage/player-visuals.css` + `HotspotLayer.tsx` mirror player-core's hotspot/tooltip look. Keep them in sync.
+- Export re-encodes the video: `core/video-clips.ts` plans the played ranges (merged, laid end to end with a 0.1s gap so non-contiguous clips stay non-contiguous for the player) and retimes the steps; `lib/export-video.ts` encodes them with Mediabunny, a key frame at each range start. Encoder order: hardware H.264 with a quantizer (the only H.264 encoder in Chrome with quantizer rate control) → software H.264 (bitrate only) → software VP9 → the whole recording as is. `hooks/use-video-export.ts` caches the encode by ranges, so the size estimate and the download share it.
+- The recording is a master: record at high quality (`offscreen/lib/recording-settings.ts`) and optimize at export. Photo steps come from the video, never from separate screenshots, because the editor converts steps between photo and video.
 - Manual testing without recording: serve `.output/chrome-mv3` over http, seed the `openshowcase` IndexedDB with a canvas-generated webm + markers, and open `editor.html?recordingId=…`. Chrome defers media in hidden tabs, so background screenshots show empty video.
 
 ## UI

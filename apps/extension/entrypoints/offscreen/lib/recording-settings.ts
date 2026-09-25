@@ -39,9 +39,13 @@ export function computeVideoBitrate({
 }: VideoBitrateParams): number {
   const pixelsPerFrame = tabWidth * scale * tabHeight * scale;
   const isVp9 = mimeType.includes("vp9");
-  const bitsPerPixelPerFrame = isVp9 ? 0.055 : 0.1;
+  // The recording is a master, not the delivered file: export re-encodes only the ranges the
+  // demo plays (editor/lib/export-video.ts), so recording rates aim for near-lossless UI text.
+  // Static stretches cost almost nothing whatever the target, so this mostly buys sharper
+  // scrolls and transitions.
+  const bitsPerPixelPerFrame = isVp9 ? 0.1 : 0.18;
   const fpsFactor = (fps / 30) ** 0.75;
-  const ceiling = (isVp9 ? 9_000_000 : 14_000_000) * fpsFactor;
+  const ceiling = (isVp9 ? 16_000_000 : 25_000_000) * fpsFactor;
   return Math.round(
     Math.min(
       Math.max(

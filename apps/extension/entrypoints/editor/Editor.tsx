@@ -26,6 +26,7 @@ import { useClipPlayback } from "./hooks/use-clip-playback";
 import { useEditorDocument } from "./hooks/use-editor-document";
 import { type Hotkey, useHotkeys } from "./hooks/use-hotkeys";
 import { useFrameExtraction } from "./hooks/use-recording";
+import { useVideoExport } from "./hooks/use-video-export";
 import {
   DEFAULT_HOTSPOT_LABEL,
   type EditableStep,
@@ -279,17 +280,17 @@ export function Editor({
     };
   }, [steps, theme, title, recording, videoUrl, duration, recordingId]);
 
-  const hasVideoSteps =
-    previewDemo?.steps.some((s) => s.type === "video") ?? false;
+  const prepareVideo = useVideoExport(recording.videoBlob);
 
   const estimateSize = useCallback(async () => {
-    let total = hasVideoSteps ? (recording.videoBlob?.size ?? 0) : 0;
+    if (!previewDemo) return 0;
+    let total = (await prepareVideo(previewDemo)).videoBlob?.size ?? 0;
     for (const step of steps) {
       if (step.data.kind !== "photo" || !step.data.imageBlob) continue;
       total += (await blobToWebp(step.data.imageBlob)).size;
     }
     return total;
-  }, [steps, hasVideoSteps, recording.videoBlob]);
+  }, [steps, previewDemo, prepareVideo]);
 
   async function exportBundle(): Promise<string> {
     if (!previewDemo) throw new Error("Frames are still being extracted");
@@ -298,11 +299,8 @@ export function Editor({
       if (step.data.kind === "photo" && step.data.imageBlob)
         imageBlobs.set(step.id, step.data.imageBlob);
     }
-    const blob = await buildDemoBundle({
-      demo: previewDemo,
-      videoBlob: hasVideoSteps ? (recording.videoBlob ?? undefined) : undefined,
-      imageBlobs,
-    });
+    const { demo, videoBlob } = await prepareVideo(previewDemo);
+    const blob = await buildDemoBundle({ demo, videoBlob, imageBlobs });
     const file = `${title.trim().replace(/\s+/g, "-").toLowerCase() || "demo"}.zip`;
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

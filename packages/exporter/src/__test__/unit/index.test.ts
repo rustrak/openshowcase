@@ -109,6 +109,22 @@ it("includes assets/recording.webm and rewrites video.src when a videoBlob is pr
   });
 });
 
+it("names the video after its type", async () => {
+  const demo = baseDemo({
+    video: { src: "original.webm", width: 1280, height: 720, durationSec: 10 },
+    steps: [videoStep()],
+  });
+  const bundle = await buildDemoBundle({
+    demo,
+    videoBlob: new Blob(["fake-mp4-bytes"], { type: "video/mp4" }),
+    imageBlobs: new Map(),
+  });
+
+  const zip = await JSZip.loadAsync(bundle);
+  expect(Object.keys(zip.files)).toContain("assets/recording.mp4");
+  expect((await readStepsJson(zip)).video?.src).toBe("assets/recording.mp4");
+});
+
 it("passes video steps through unchanged when mixed with photo steps", async () => {
   const demo = baseDemo({
     steps: [
