@@ -20,7 +20,7 @@
     "@changesets/cli": "3.0.3",
     "lefthook": "2.1.14",
     "turbo": "2.11.3",
-    "typescript": "6.0.3"
+    "typescript": "catalog:core"
   },
   "packageManager": "pnpm@12.6.0",
   "engines": {

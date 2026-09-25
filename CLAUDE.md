@@ -38,6 +38,7 @@ Each workspace has its own `CLAUDE.md` with its build, test and gotcha notes. Re
 ## Dependencies
 
 - Pin every dependency to an exact version (`.npmrc` sets `save-exact=true`). The only ranges allowed are the adapters' `peerDependencies` (`react`, `vue`).
+- Dependencies shared by more than one workspace live in the named `catalogs` of `pnpm-workspace.yaml` (`core`, `react`, `tailwind`, `tooling`) and are referenced as `catalog:<name>`. Bump them there, never in a `package.json`. A dependency used by a single workspace stays pinned in its own `package.json` until a second workspace needs it.
 - pnpm 12 settings (`overrides`, `allowBuilds`) go in `pnpm-workspace.yaml`, never in `package.json`. Installs reject versions published less than 24h ago (`minimumReleaseAge`), so pick an older exact version instead of adding exclusions. New packages with install scripts must be added to `allowBuilds`.
 - `packages/*` and `adapters/*` are published to npm as public packages and ship only `dist/` (`files`). `apps/*` and the root stay `private`. Workspace deps use `workspace:*`, which pnpm rewrites to exact versions on publish.
 - Stay on TypeScript 6.x. TS 7.0 has no programmatic API, which breaks `dts-bundle-generator` (player-core) and `vue-tsc` (player-vue).

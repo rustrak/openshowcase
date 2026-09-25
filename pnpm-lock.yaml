@@ -162,6 +162,60 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  core:
+    typescript:
+      specifier: 6.0.3
+      version: 6.0.3
+  react:
+    '@types/react':
+      specifier: 19.3.0
+      version: 19.3.0
+    '@types/react-dom':
+      specifier: 19.3.0
+      version: 19.3.0
+    react:
+      specifier: 19.3.0
+      version: 19.3.0
+    react-dom:
+      specifier: 19.3.0
+      version: 19.3.0
+  tailwind:
+    '@tailwindcss/vite':
+      specifier: 4.3.3
+      version: 4.3.3
+    tailwindcss:
+      specifier: 4.3.3
+      version: 4.3.3
+  tooling:
+    '@rslib/core':
+      specifier: 1.0.1
+      version: 1.0.1
+    '@size-limit/file':
+      specifier: 14.0.0
+      version: 14.0.0
+    '@vitest/browser':
+      specifier: 5.0.1
+      version: 5.0.1
+    '@vitest/browser-playwright':
+      specifier: 5.0.1
+      version: 5.0.1
+    '@vitest/ui':
+      specifier: 5.0.1
+      version: 5.0.1
+    playwright:
+      specifier: 1.63.0
+      version: 1.63.0
+    size-limit:
+      specifier: 14.0.0
+      version: 14.0.0
+    vite:
+      specifier: 8.3.0
+      version: 8.3.0
+    vitest:
+      specifier: 5.0.1
+      version: 5.0.1
+
 importers:
 
   .:
@@ -182,7 +236,7 @@ importers:
         specifier: 2.11.3
         version: 2.11.3
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
 
   adapters/player-react:
@@ -201,19 +255,19 @@ importers:
         specifier: 2.1.0
         version: 2.1.0(@rsbuild/core@2.2.8)(@rspack/core@2.2.6(@swc/helpers@0.5.23))
       '@rslib/core':
-        specifier: 1.0.1
+        specifier: catalog:tooling
         version: 1.0.1(typescript@6.0.3)
       '@size-limit/file':
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       '@types/react':
-        specifier: 19.3.0
+        specifier: catalog:react
         version: 19.3.0
       size-limit:
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
 
   adapters/player-vue:
@@ -229,19 +283,19 @@ importers:
         specifier: 2.0.1
         version: 2.0.1(@rsbuild/core@2.2.8)(@rspack/core@2.2.6(@swc/helpers@0.5.23))(@vue/compiler-sfc@3.5.43)(vue@3.5.43(typescript@6.0.3))
       '@rslib/core':
-        specifier: 1.0.1
+        specifier: catalog:tooling
         version: 1.0.1(typescript@6.0.3)
       '@size-limit/file':
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       '@vue/language-core':
         specifier: 3.3.11
         version: 3.3.11
       size-limit:
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
       vue:
         specifier: 3.5.43
@@ -298,10 +352,10 @@ importers:
         specifier: 1.59.0
         version: 1.59.0
       react:
-        specifier: 19.3.0
+        specifier: catalog:react
         version: 19.3.0
       react-dom:
-        specifier: 19.3.0
+        specifier: catalog:react
         version: 19.3.0(react@19.3.0)
       sonner:
         specifier: 2.0.8
@@ -311,34 +365,34 @@ importers:
         version: 3.7.0
     devDependencies:
       '@tailwindcss/vite':
-        specifier: 4.3.3
+        specifier: catalog:tailwind
         version: 4.3.3(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
       '@types/chrome':
         specifier: 0.3.0
         version: 0.3.0
       '@types/react':
-        specifier: 19.3.0
+        specifier: catalog:react
         version: 19.3.0
       '@types/react-dom':
-        specifier: 19.3.0
+        specifier: catalog:react
         version: 19.3.0(@types/react@19.3.0)
       '@wxt-dev/module-react':
         specifier: 1.2.2
         version: 1.2.2(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))(wxt@0.21.4(@rsbuild/core@2.2.8)(@rspack/core@2.2.6)(rolldown@1.2.9)(typescript@6.0.3)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1)))
       tailwindcss:
-        specifier: 4.3.3
+        specifier: catalog:tailwind
         version: 4.3.3
       tw-animate-css:
         specifier: 1.4.0
         version: 1.4.0
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
       vite:
-        specifier: 8.3.0
+        specifier: catalog:tooling
         version: 8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1)
       vitest:
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
       wxt:
         specifier: 0.21.4
@@ -354,28 +408,28 @@ importers:
         version: 3.10.2
     devDependencies:
       '@rslib/core':
-        specifier: 1.0.1
+        specifier: catalog:tooling
         version: 1.0.1(typescript@6.0.3)
       '@size-limit/file':
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       '@vitest/browser':
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
       '@vitest/browser-playwright':
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
       playwright:
-        specifier: 1.63.0
+        specifier: catalog:tooling
         version: 1.63.0
       size-limit:
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
       vitest:
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
 
   packages/player-core:
@@ -385,49 +439,49 @@ importers:
         version: link:../schema
     devDependencies:
       '@size-limit/file':
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       '@sveltejs/vite-plugin-svelte':
         specifier: 7.3.1
         version: 7.3.1(svelte@5.57.1)(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
       '@tailwindcss/vite':
-        specifier: 4.3.3
+        specifier: catalog:tailwind
         version: 4.3.3(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
       '@vitest/browser':
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
       '@vitest/browser-playwright':
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
       '@vitest/ui':
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(vitest@5.0.1)
       dts-bundle-generator:
         specifier: 9.5.1
         version: 9.5.1
       playwright:
-        specifier: 1.63.0
+        specifier: catalog:tooling
         version: 1.63.0
       size-limit:
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0
       svelte:
         specifier: 5.57.1
         version: 5.57.1
       tailwindcss:
-        specifier: 4.3.3
+        specifier: catalog:tailwind
         version: 4.3.3
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
       vite:
-        specifier: 8.3.0
+        specifier: catalog:tooling
         version: 8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1)
       vite-plugin-css-injected-by-js:
         specifier: 5.0.2
         version: 5.0.2(vite@8.3.0(@types/node@26.6.2)(jiti@2.7.0)(yaml@2.9.1))
       vitest:
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
       vitest-browser-svelte:
         specifier: 3.1.0
@@ -440,19 +494,19 @@ importers:
         version: 1.5.0(typescript@6.0.3)
     devDependencies:
       '@rslib/core':
-        specifier: 1.0.1
+        specifier: catalog:tooling
         version: 1.0.1(typescript@6.0.3)
       '@size-limit/file':
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       size-limit:
-        specifier: 14.0.0
+        specifier: catalog:tooling
         version: 14.0.0
       typescript:
-        specifier: 6.0.3
+        specifier: catalog:core
         version: 6.0.3
       vitest:
-        specifier: 5.0.1
+        specifier: catalog:tooling
         version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
 
 packages:
