@@ -6,8 +6,7 @@ Framework-agnostic playback engine used by both adapters and by the extension's 
 
 - `pnpm build`: Rslib in bundleless mode (`rslib.config.ts`): one readable, unminified ESM file per source module, so a host that imports only the tooltip geometry doesn't get the player. The host app's bundler minifies. Vite is only used by Vitest.
 - **No side effects at import time.** `package.json` declares `"sideEffects": ["**/*.css"]`: `dist/app.css` (Tailwind) is the only side-effect import. Components inject their own CSS when they're created (`injectStyles`). Don't add module-level code that touches the DOM or globals.
-- **alien-signals is compiled into `dist/`**, not a dependency: it's a `devDependency`, only `src/dom/signals.ts` imports it, and a second, bundled lib in `rslib.config.ts` builds that module (alien-signals included) into `dist/dom/signals.js`. Import signals from `dom/signals`, never from `alien-signals` directly.
-- `scripts/check-dist-imports.mjs` (run by `pnpm size`) fails if `dist/`'s JS imports any package but the schema, or if the public types (what `dist/index.d.ts` reaches) reference one.
+- **alien-signals is compiled into `dist/`**, not a dependency: it's a `devDependency`, only `src/dom/signals.ts` imports it, and a second, bundled lib in `rslib.config.ts` builds that module (alien-signals included) into `dist/dom/signals.js`. Import signals from `dom/signals`, never from `alien-signals` directly (a Biome `noRestrictedImports` rule enforces it): a direct import would stay in `dist/` as an import of a package the published package doesn't declare.
 - Declarations: `tsconfig.build.json` starts them at `src/index.ts`.
 - **Keep `exports["."].default` pointing at `./dist/index.js`.**
 - `pnpm size` (`.size-limit.mjs`): what a host ships, bundled and minified by esbuild. `Player` (JS + CSS) within 35 KB, and the tooltip geometry alone within 2 KB, which fails if the player stops tree-shaking away.

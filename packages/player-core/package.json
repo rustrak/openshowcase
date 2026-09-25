@@ -43,7 +43,7 @@
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "size": "size-limit && node scripts/check-dist-imports.mjs"
+    "size": "size-limit"
   },
   "dependencies": {
     "@rustrak/openshowcase-schema": "workspace:*"

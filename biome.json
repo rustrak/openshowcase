@@ -83,6 +83,33 @@
   },
   "overrides": [
     {
+      "includes": ["packages/player-core/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "alien-signals": "Import signals from src/dom/signals.ts: it's the only module the build compiles alien-signals into dist/ through, so a direct import would ship as a dependency the package doesn't declare."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/player-core/src/dom/signals.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.vue"],
       "linter": {
         "rules": {
