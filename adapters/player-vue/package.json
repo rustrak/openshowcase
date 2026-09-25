@@ -63,7 +63,7 @@
     "@size-limit/file": "catalog:tooling",
     "@vue/language-core": "3.3.11",
     "size-limit": "catalog:tooling",
-    "typescript": "catalog:core",
+    "typescript": "catalog:vue-tooling",
     "vue": "3.5.43",
     "vue-tsc": "3.3.11"
   }

@@ -23,6 +23,12 @@ minimumReleaseAgeExclude:
 catalogs:
   # What every workspace builds with.
   core:
+    typescript: 7.0.2
+
+  # TypeScript 7 ships only the native `tsc`: its package no longer exports the JS compiler
+  # API. player-vue's toolchain still loads that API (vue-tsc, and @vue/compiler-sfc through
+  # the Vue loader to resolve `defineProps` types), so it stays on 6 until Vue supports 7.
+  vue-tooling:
     typescript: 6.0.3
 
   # React and its types, pinned together so the @types never lag behind the runtime.

@@ -5,3 +5,4 @@
 - **The `vue-tsc` step in the `build` script is required.** Don't replace it with `dts: true` in `rslib.config.ts`: Rslib silently emits a generic `DefineComponent<Record<string, unknown>>` for `.vue` files. If the types look generic, inspect `dist/InteractiveDemo.vue.d.ts`, since a passing build proves nothing.
 - `--noEmit false` in that step overrides `tsconfig.json`'s `noEmit: true` (which `check-types` needs).
 - `vue` is a peer dependency (range), never a direct dependency.
+- **Stays on TypeScript 6** (`catalog:vue-tooling`) while the rest of the repo is on 7: `vue-tsc` and the Vue loader (`@vue/compiler-sfc` resolving `defineProps` types) load TypeScript's JS API, which TS 7 removed. Move it to `catalog:core` once they support TS 7.
