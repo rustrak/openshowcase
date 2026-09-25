@@ -167,6 +167,69 @@ describe("startVideoStep", () => {
     expect(onZoomOut).toHaveBeenCalledTimes(1);
   });
 
+  it("keeps its zoom to the end when the next step is a zoomed photo, which picks up the framing", () => {
+    const video = createVideo({ currentTime: 9.99 });
+    const onZoomOut = vi.fn();
+    startVideoStep(
+      video as never,
+      { ...baseStep, panZoom: { x: 0.5, y: 0.5, scale: 2 } },
+      true,
+      { onProgress: vi.fn(), onZoomOut, onEnded: vi.fn() },
+      {
+        id: "p",
+        type: "photo",
+        image: { src: "a.webp", width: 1, height: 1 },
+        panZoom: { x: 0.3, y: 0.3, scale: 1.5 },
+      },
+    );
+
+    raf.tick(0);
+
+    expect(onZoomOut).not.toHaveBeenCalled();
+  });
+
+  it("keeps its zoom to the end when the next step is a zoomed clip", () => {
+    const video = createVideo({ currentTime: 9.99 });
+    const onZoomOut = vi.fn();
+    startVideoStep(
+      video as never,
+      { ...baseStep, panZoom: { x: 0.5, y: 0.5, scale: 2 } },
+      true,
+      { onProgress: vi.fn(), onZoomOut, onEnded: vi.fn() },
+      {
+        id: "v2",
+        type: "video",
+        startTime: 10,
+        endTime: 20,
+        panZoom: { x: 0.3, y: 0.3, scale: 1.5 },
+      },
+    );
+
+    raf.tick(0);
+
+    expect(onZoomOut).not.toHaveBeenCalled();
+  });
+
+  it("still zooms out before the end when the next step is a photo without zoom", () => {
+    const video = createVideo({ currentTime: 9.99 });
+    const onZoomOut = vi.fn();
+    startVideoStep(
+      video as never,
+      { ...baseStep, panZoom: { x: 0.5, y: 0.5, scale: 2 } },
+      true,
+      { onProgress: vi.fn(), onZoomOut, onEnded: vi.fn() },
+      {
+        id: "p",
+        type: "photo",
+        image: { src: "a.webp", width: 1, height: 1 },
+      },
+    );
+
+    raf.tick(0);
+
+    expect(onZoomOut).toHaveBeenCalledTimes(1);
+  });
+
   it("does not fire onZoomOut when the step has no panZoom", () => {
     const video = createVideo({ currentTime: 9.99 });
     const onZoomOut = vi.fn();
