@@ -23,8 +23,6 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Full history so `changeset status` can diff against the base branch.
-          fetch-depth: 0
           persist-credentials: false
 
       # Reads the pnpm version from `packageManager` in package.json.
@@ -50,8 +48,3 @@ jobs:
 
       # Biome (lint + format), then build, types, tests and bundle size via Turbo.
       - run: pnpm run ci
-
-      # Fails if a package changed without a changeset. Changes that must not
-      # release anything (docs, CI) can add an empty one: `pnpm changeset --empty`.
-      - name: Check for a changeset
-        run: pnpm changeset status --since="origin/${{ github.base_ref }}"

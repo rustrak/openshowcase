@@ -17,7 +17,7 @@
       "dependsOn": ["^build"]
     },
     "size": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["build"]
     },
     "dev": {
       "dependsOn": ["^build"],

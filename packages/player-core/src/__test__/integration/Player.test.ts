@@ -45,6 +45,7 @@ describe("Player (mount.ts) integration", () => {
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     player?.destroy();
     container.remove();
   });
@@ -131,6 +132,49 @@ describe("Player (mount.ts) integration", () => {
     (segments[2] as HTMLButtonElement).click();
 
     expect(player.currentIndex).toBe(2);
+  });
+
+  it("reveals the photo's hotspot again after seeking back to the video step before it", async () => {
+    // no real clip to decode here: play() is stubbed and the video step is ended by hand
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const onStepChange = vi.fn();
+    player = new Player({
+      container,
+      onStepChange,
+      demo: {
+        id: "demo-2",
+        title: "Video then photo",
+        theme: { wrapper: "none", autoplay: false, appearance: "light" },
+        video: {
+          src: "data:video/webm;base64,",
+          width: 800,
+          height: 600,
+          durationSec: 2,
+        },
+        steps: [
+          { id: "clip", type: "video", startTime: 0, endTime: 1 },
+          {
+            id: "photo",
+            type: "photo",
+            image: { src: TINY_PNG, width: 800, height: 600 },
+            hotspot: { x: 0.5, y: 0.5, label: "Click here" },
+          },
+        ],
+      },
+    });
+    player.mount();
+    const hotspot = () => container.querySelector('[aria-label="Hotspot"]');
+    // wait out the initial render before navigating (see the background-click test)
+    await vi.waitFor(() => expect(onStepChange).toHaveBeenCalled());
+
+    player.next();
+    await vi.waitFor(() => expect(hotspot()).not.toBeNull());
+
+    player.goTo(0);
+    await vi.waitFor(() => expect(hotspot()).toBeNull());
+
+    player.next();
+    await vi.waitFor(() => expect(hotspot()).not.toBeNull());
   });
 
   it("destroys cleanly, leaving the container empty", async () => {
