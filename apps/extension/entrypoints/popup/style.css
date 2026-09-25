@@ -1,1 +1,47 @@
 @import "../../assets/theme.css";
+
+/* Record glyph (components/RecordGlyph.tsx): a ripple grows from the dot into the ring
+   and fades, while the dot breathes slightly in step with it. */
+.record-ripple,
+.record-dot {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.record-ripple {
+  opacity: 0;
+  animation: record-ripple 2s var(--ease-out-strong) infinite;
+}
+
+.record-dot {
+  animation: record-dot 2s var(--ease-in-out-strong) infinite;
+}
+
+@keyframes record-ripple {
+  0% {
+    transform: scale(0.5);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+@keyframes record-dot {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  15% {
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .record-ripple,
+  .record-dot {
+    animation: none;
+  }
+}
