@@ -20,6 +20,7 @@ import { Sequence } from "./components/sequence/Sequence";
 import { Stage } from "./components/stage/Stage";
 import { type StageTool, StageToolbar } from "./components/stage/StageToolbar";
 import { type EditorMode, TopBar } from "./components/TopBar";
+import { type ExportFormat, exportFileName } from "./core/export-format";
 import { MIN_CLIP_SEC } from "./core/sequence-layout";
 import * as StepEditor from "./core/step-editor";
 import { useClipPlayback } from "./hooks/use-clip-playback";
@@ -292,7 +293,7 @@ export function Editor({
     return total;
   }, [steps, previewDemo, prepareVideo]);
 
-  async function exportBundle(): Promise<string> {
+  async function exportBundle(format: ExportFormat): Promise<string> {
     if (!previewDemo) throw new Error("Frames are still being extracted");
     const imageBlobs = new Map<string, Blob>();
     for (const step of steps) {
@@ -301,7 +302,7 @@ export function Editor({
     }
     const { demo, videoBlob } = await prepareVideo(previewDemo);
     const blob = await buildDemoBundle({ demo, videoBlob, imageBlobs });
-    const file = `${title.trim().replace(/\s+/g, "-").toLowerCase() || "demo"}.zip`;
+    const file = exportFileName(title, format);
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

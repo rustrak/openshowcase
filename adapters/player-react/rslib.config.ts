@@ -6,6 +6,7 @@ import { defineConfig } from "@rslib/core";
 // real imports rather than bundling them in, matching a package meant to be published
 // standalone (the consumer brings their own React and the sibling packages).
 export default defineConfig({
+  source: { tsconfigPath: "./tsconfig.build.json" },
   lib: [
     {
       format: "esm",

@@ -38,9 +38,11 @@
     "access": "public"
   },
   "scripts": {
-    "build": "rslib build && vue-tsc -p tsconfig.json --declaration --emitDeclarationOnly --noEmit false --outDir dist",
+    "build": "rslib build && vue-tsc -p tsconfig.build.json --declaration --emitDeclarationOnly --noEmit false --outDir dist",
     "dev": "rslib build --watch",
     "check-types": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "size": "size-limit"
   },
   "dependencies": {
@@ -60,10 +62,15 @@
   "devDependencies": {
     "@rsbuild/plugin-vue": "2.0.1",
     "@rslib/core": "catalog:tooling",
+    "@rustrak/openshowcase-exporter": "workspace:*",
     "@size-limit/file": "catalog:tooling",
+    "@vitejs/plugin-vue": "6.0.9",
+    "@vitest/browser-playwright": "catalog:tooling",
     "@vue/language-core": "3.3.11",
+    "playwright": "catalog:tooling",
     "size-limit": "catalog:tooling",
     "typescript": "catalog:vue-tooling",
+    "vitest": "catalog:tooling",
     "vue": "3.5.43",
     "vue-tsc": "3.3.11"
   }

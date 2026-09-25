@@ -8,5 +8,11 @@ export {
   type TooltipPlacement,
   type TooltipSide,
 } from "./core/geometry";
+export {
+  type AssetResolver,
+  type LoadDemoOptions,
+  type LoadedDemo,
+  loadDemo,
+} from "./core/load-demo";
 export type { PlayerOptions } from "./mount";
 export { Player } from "./mount";

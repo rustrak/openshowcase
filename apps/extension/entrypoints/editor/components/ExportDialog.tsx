@@ -16,26 +16,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn, formatBytes } from "@/lib/utils";
+import { type ExportFormat, embedSnippet } from "../core/export-format";
 
 interface ExportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   stepCount: number;
   clipCount: number;
-  /** Estimated zip size in bytes — computed when the dialog opens. */
+  /** Estimated bundle size in bytes — computed when the dialog opens. */
   estimate: () => Promise<number>;
   /** Builds and downloads the bundle; resolves to the downloaded file name. */
-  onExport: () => Promise<string>;
+  onExport: (format: ExportFormat) => Promise<string>;
 }
 
 type Phase =
   | { kind: "idle" }
-  | { kind: "exporting" }
-  | { kind: "done"; file: string };
-
-const SNIPPET = `import { InteractiveDemo } from "@rustrak/openshowcase-player-react";
-
-<InteractiveDemo src="/demos/my-demo/steps.json" />`;
+  | { kind: "exporting"; format: ExportFormat }
+  | { kind: "done"; file: string; format: ExportFormat };
 
 export function ExportDialog({
   open,
@@ -61,11 +58,11 @@ export function ExportDialog({
     };
   }, [open, estimate]);
 
-  async function run() {
-    setPhase({ kind: "exporting" });
+  async function run(format: ExportFormat) {
+    setPhase({ kind: "exporting", format });
     try {
-      const file = await onExport();
-      setPhase({ kind: "done", file });
+      const file = await onExport(format);
+      setPhase({ kind: "done", file, format });
     } catch (error) {
       setPhase({ kind: "idle" });
       toast.error("Export failed", {
@@ -80,9 +77,8 @@ export function ExportDialog({
         <DialogHeader>
           <DialogTitle className="text-base">Export demo</DialogTitle>
           <DialogDescription className="text-xs">
-            A self-contained bundle:{" "}
-            <code className="font-mono">steps.json</code> plus its frames and
-            recording. Host it anywhere and embed it with the player.
+            One self-contained file with the steps, frames and video. Drop it in
+            your site's static files and embed it with the player.
           </DialogDescription>
         </DialogHeader>
 
@@ -110,11 +106,13 @@ export function ExportDialog({
             <div className="flex items-center gap-2.5 rounded-lg bg-primary/15 px-3 py-2.5 text-xs text-foreground">
               <PackageCheck className="size-4 text-brand-text" />
               <span>
-                Downloaded <span className="font-mono">{phase.file}</span>.
-                Unzip it into your site and embed it:
+                Downloaded <span className="font-mono">{phase.file}</span>.{" "}
+                {phase.format === "zip"
+                  ? "Unzip it into your site's public/demos/ and embed it:"
+                  : "Put it in your site's public/demos/ and embed it:"}
               </span>
             </div>
-            <CodeBlock code={SNIPPET} />
+            <CodeBlock code={embedSnippet(phase.file, phase.format)} />
           </div>
         ) : null}
 
@@ -123,21 +121,38 @@ export function ExportDialog({
             {phase.kind === "done" ? "Done" : "Cancel"}
           </Button>
           {phase.kind !== "done" && (
-            <Button
-              onClick={run}
-              disabled={phase.kind === "exporting"}
-              className="min-w-36 gap-1.5"
-            >
-              {phase.kind === "exporting" ? (
-                <>
-                  <LoaderCircle className="size-3.5 animate-spin" /> Packaging…
-                </>
-              ) : (
-                <>
-                  <Download className="size-3.5" /> Download .zip
-                </>
-              )}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                onClick={() => run("zip")}
+                disabled={phase.kind === "exporting"}
+                className="gap-1.5"
+              >
+                {phase.kind === "exporting" && phase.format === "zip" ? (
+                  <LoaderCircle className="size-3.5 animate-spin" />
+                ) : (
+                  <Download className="size-3.5" />
+                )}
+                .zip
+              </Button>
+              <Button
+                onClick={() => run("openshowcase")}
+                disabled={phase.kind === "exporting"}
+                className="min-w-44 gap-1.5"
+              >
+                {phase.kind === "exporting" &&
+                phase.format === "openshowcase" ? (
+                  <>
+                    <LoaderCircle className="size-3.5 animate-spin" />{" "}
+                    Packaging…
+                  </>
+                ) : (
+                  <>
+                    <Download className="size-3.5" /> Download .openshowcase
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </div>
       </DialogContent>

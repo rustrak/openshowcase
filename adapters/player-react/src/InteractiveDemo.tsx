@@ -1,9 +1,16 @@
-import { Player } from "@rustrak/openshowcase-player-core";
-import { type Demo, parseDemo, type Step } from "@rustrak/openshowcase-schema";
+import {
+  type AssetResolver,
+  loadDemo,
+  Player,
+} from "@rustrak/openshowcase-player-core";
+import type { Demo, Step } from "@rustrak/openshowcase-schema";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 export interface InteractiveDemoProps {
-  /** URL to a `steps.json` produced by the OpenShowcase exporter. Assets are resolved relative to its directory. */
+  /**
+   * URL of an exported demo: a single `.openshowcase` file (or the exported `.zip`), or an
+   * unzipped bundle's `steps.json`, whose assets are resolved relative to its directory.
+   */
   src?: string;
   /** A pre-loaded Demo object, as an alternative to `src`. */
   demo?: Demo;
@@ -19,11 +26,12 @@ export interface InteractiveDemoProps {
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; demo: Demo; assetBaseUrl?: string };
-
-function dirnameOf(url: string): string {
-  return url.slice(0, url.lastIndexOf("/"));
-}
+  | {
+      status: "ready";
+      demo: Demo;
+      assetBaseUrl?: string;
+      resolveAsset?: AssetResolver;
+    };
 
 export function InteractiveDemo({
   src,
@@ -52,27 +60,19 @@ export function InteractiveDemo({
       return;
     }
 
-    let cancelled = false;
+    const abort = new AbortController();
+    let dispose: (() => void) | undefined;
     setState({ status: "loading" });
 
-    fetch(src)
-      .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            `Failed to load demo: ${res.status} ${res.statusText}`,
-          );
-        return res.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        setState({
-          status: "ready",
-          demo: parseDemo(json),
-          assetBaseUrl: assetBaseUrl ?? dirnameOf(src),
-        });
+    loadDemo(src, { assetBaseUrl, signal: abort.signal })
+      .then(({ dispose: free, ...loaded }) => {
+        // Unmounted (or src changed) while loading: free it right away
+        if (abort.signal.aborted) return free();
+        dispose = free;
+        setState({ status: "ready", ...loaded });
       })
       .catch((error: unknown) => {
-        if (cancelled) return;
+        if (abort.signal.aborted) return;
         setState({
           status: "error",
           message:
@@ -81,7 +81,8 @@ export function InteractiveDemo({
       });
 
     return () => {
-      cancelled = true;
+      abort.abort();
+      dispose?.();
     };
   }, [src, demo, assetBaseUrl]);
 
@@ -93,6 +94,7 @@ export function InteractiveDemo({
       container,
       demo: state.demo,
       assetBaseUrl: state.assetBaseUrl,
+      resolveAsset: state.resolveAsset,
       onStepChange,
     });
     player.mount();

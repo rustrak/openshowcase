@@ -1,7 +1,10 @@
 import type { Demo, Step } from "@rustrak/openshowcase-schema";
 
 export interface InteractiveDemoProps {
-  /** URL to a `steps.json` produced by the OpenShowcase exporter. Assets are resolved relative to its directory. */
+  /**
+   * URL of an exported demo: a single `.openshowcase` file (or the exported `.zip`), or an
+   * unzipped bundle's `steps.json`, whose assets are resolved relative to its directory.
+   */
   src?: string;
   /** A pre-loaded Demo object, as an alternative to `src`. */
   demo?: Demo;
