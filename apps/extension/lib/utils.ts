@@ -1,5 +1,11 @@
 import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+// Our custom type scale (`text-2xs`, `text-ui`, see theme.css) must count as font
+// sizes: otherwise tailwind-merge reads them as colors and drops the real text color.
+const twMerge = extendTailwindMerge({
+  extend: { classGroups: { "font-size": [{ text: ["2xs", "ui"] }] } },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

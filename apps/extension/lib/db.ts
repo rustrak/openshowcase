@@ -141,3 +141,15 @@ export async function getMarkersByRecording(
   );
   return markers.sort((a, b) => a.capturedAt - b.capturedAt);
 }
+
+/** Finished recordings, newest first. */
+export async function listRecentRecordings(
+  limit: number,
+): Promise<RecordingRecord[]> {
+  const db = await getDb();
+  const all = await db.getAll("recordings");
+  return all
+    .filter((record) => record.status === "complete")
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, limit);
+}
