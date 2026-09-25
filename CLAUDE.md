@@ -9,7 +9,7 @@ Run from the repo root (Turborepo fans out to every workspace):
 - `pnpm build` / `pnpm check-types` / `pnpm test` / `pnpm size`
 - `pnpm lint` / `pnpm format`: Biome check / check with `--write`
 - `pnpm ci`: what CI runs on every PR (`biome ci` + build, types, tests, size)
-- `pnpm changeset`: add a changeset. CI fails on a PR that changes a package without one (`pnpm changeset --empty` for changes that release nothing)
+- `pnpm changeset`: add a changeset. Only changes with a changeset get released
 - One package: `pnpm --filter @rustrak/openshowcase-<name> <script>`
 - Extension dev: `pnpm --filter @rustrak/openshowcase-extension dev`, then load `apps/extension/.output/chrome-mv3` unpacked in `chrome://extensions`
 
