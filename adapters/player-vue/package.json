@@ -59,11 +59,11 @@
   ],
   "devDependencies": {
     "@rsbuild/plugin-vue": "2.0.1",
-    "@rslib/core": "1.0.1",
-    "@size-limit/file": "14.0.0",
+    "@rslib/core": "catalog:tooling",
+    "@size-limit/file": "catalog:tooling",
     "@vue/language-core": "3.3.11",
-    "size-limit": "14.0.0",
-    "typescript": "6.0.3",
+    "size-limit": "catalog:tooling",
+    "typescript": "catalog:vue-tooling",
     "vue": "3.5.43",
     "vue-tsc": "3.3.11"
   }

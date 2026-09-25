@@ -10,7 +10,6 @@ allowBuilds:
   spawn-sync: false # legacy postinstall pulled in by wxt > web-ext-run
 
 minimumReleaseAgeExclude:
-  - '@sveltejs/vite-plugin-svelte@7.3.1'
   - '@turbo/darwin-64@2.11.3'
   - '@turbo/darwin-arm64@2.11.3'
   - '@turbo/linux-64@2.11.3'
@@ -18,3 +17,42 @@ minimumReleaseAgeExclude:
   - '@turbo/windows-64@2.11.3'
   - '@turbo/windows-arm64@2.11.3'
   - turbo@2.11.3
+
+# One version per shared dependency for the whole monorepo: package.json files reference
+# these with `catalog:<name>`, and `pnpm publish` swaps that for the real version.
+catalogs:
+  # What every workspace builds with.
+  core:
+    typescript: 7.0.2
+
+  # TypeScript 7 ships only the native `tsc`: its package no longer exports the JS compiler
+  # API. player-vue's toolchain still loads that API (vue-tsc, and @vue/compiler-sfc through
+  # the Vue loader to resolve `defineProps` types), so it stays on 6 until Vue supports 7.
+  vue-tooling:
+    typescript: 6.0.3
+
+  # React and its types, pinned together so the @types never lag behind the runtime.
+  react:
+    react: 19.3.0
+    react-dom: 19.3.0
+    "@types/react": 19.3.0
+    "@types/react-dom": 19.3.0
+
+  # Tailwind and its Vite plugin (extension and player-core) move in lockstep.
+  tailwind:
+    tailwindcss: 4.3.3
+    "@tailwindcss/vite": 4.3.3
+    "@tailwindcss/postcss": 4.3.3
+
+  # Shared build, test and size tooling. The @vitest/* packages must match vitest.
+  tooling:
+    vite: 8.3.0
+    vitest: 5.0.1
+    "@vitest/browser": 5.0.1
+    "@vitest/browser-playwright": 5.0.1
+    "@vitest/ui": 5.0.1
+    playwright: 1.63.0
+    size-limit: 14.0.0
+    "@size-limit/file": 14.0.0
+    "@size-limit/esbuild": 14.0.0
+    "@rslib/core": 1.0.1

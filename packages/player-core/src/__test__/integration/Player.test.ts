@@ -4,7 +4,7 @@ import { Player } from "../../mount";
 
 // Video steps are already covered end-to-end by core/video-step.ts, core/video-clip-watcher.ts,
 // and VideoLayer's component tests — this integration test focuses on the photo-step flow
-// (the primary step-through experience) driven through the real, mounted Player.svelte tree.
+// (the primary step-through experience) driven through the real, mounted player.
 const TINY_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 

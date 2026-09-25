@@ -1,6 +1,6 @@
 import type { Demo, Step } from "@rustrak/openshowcase-schema";
-import { mount as svelteMount, unmount as svelteUnmount } from "svelte";
-import PlayerComponent from "./components/Player.svelte";
+import { mount as mountView } from "./dom/h";
+import { createPlayerView, type PlayerView } from "./ui/Player/Player";
 
 export interface PlayerOptions {
   container: HTMLElement;
@@ -10,67 +10,54 @@ export interface PlayerOptions {
   onStepChange?: (index: number, step: Step) => void;
 }
 
-/** The functions `Player.svelte` exports from its instance script. */
-interface PlayerInstance {
-  next: () => void;
-  prev: () => void;
-  goTo: (index: number) => void;
-  currentIndex: () => number;
-  currentStep: () => Step | undefined;
-}
-
 /**
- * Thin imperative wrapper around `Player.svelte`, keeping the same construct-then-mount
- * contract the vanilla implementation had — so `player-react`, the exporter, and the
- * extension can all consume this without any changes on their end.
+ * The player's public API: construct, then `mount()` into the container. `player-react`,
+ * `player-vue`, the exporter and the extension all consume it through this class.
  */
 export class Player {
   private readonly options: PlayerOptions;
-  // The ambient `*.svelte` module shim can't reflect Player.svelte's specific exports, so
-  // `svelteMount` infers a generic record here — narrowed to `PlayerInstance` at call sites.
-  private instance: ReturnType<typeof svelteMount> | undefined;
+  private view: PlayerView | undefined;
+  private unmount: (() => void) | undefined;
 
   constructor(options: PlayerOptions) {
     this.options = options;
   }
 
-  private get exports(): PlayerInstance | undefined {
-    return this.instance as PlayerInstance | undefined;
-  }
-
   mount(): void {
-    this.instance = svelteMount(PlayerComponent, {
-      target: this.options.container,
-      props: {
-        demo: this.options.demo,
-        assetBaseUrl: this.options.assetBaseUrl,
-        onStepChange: this.options.onStepChange,
-      },
-    });
+    const { container, demo, assetBaseUrl, onStepChange } = this.options;
+    let view!: PlayerView;
+    this.unmount = mountView(() => {
+      view = createPlayerView({ demo, assetBaseUrl, onStepChange });
+      return view.element;
+    }, container);
+    this.view = view;
+    view.start();
   }
 
   destroy(): void {
-    if (this.instance) svelteUnmount(this.instance);
-    this.instance = undefined;
+    this.view?.stop();
+    this.unmount?.();
+    this.view = undefined;
+    this.unmount = undefined;
   }
 
   next(): void {
-    this.exports?.next();
+    this.view?.next();
   }
 
   prev(): void {
-    this.exports?.prev();
+    this.view?.prev();
   }
 
   goTo(index: number): void {
-    this.exports?.goTo(index);
+    this.view?.goTo(index);
   }
 
   get currentIndex(): number {
-    return this.exports?.currentIndex() ?? 0;
+    return this.view?.currentIndex() ?? 0;
   }
 
   get currentStep(): Step | undefined {
-    return this.exports?.currentStep();
+    return this.view?.currentStep();
   }
 }

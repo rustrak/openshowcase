@@ -29,6 +29,9 @@
       "default": "./dist/index.js"
     }
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "files": [
     "dist"
   ],
@@ -36,7 +39,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "vite build && dts-bundle-generator -o dist/index.d.ts --project tsconfig.json --disable-symlinks-following --external-imports @rustrak/openshowcase-schema -- src/index.ts",
+    "build": "rslib build",
     "check-types": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -45,29 +48,21 @@
   "dependencies": {
     "@rustrak/openshowcase-schema": "workspace:*"
   },
-  "size-limit": [
-    {
-      "name": "dist/index.js (brotli)",
-      "path": "dist/index.js",
-      "limit": "35 KB"
-    }
-  ],
   "devDependencies": {
-    "@size-limit/file": "14.0.0",
-    "@sveltejs/vite-plugin-svelte": "7.3.1",
-    "@tailwindcss/vite": "4.3.3",
-    "@vitest/browser": "5.0.1",
-    "@vitest/browser-playwright": "5.0.1",
-    "@vitest/ui": "5.0.1",
-    "dts-bundle-generator": "9.5.1",
-    "playwright": "1.63.0",
-    "size-limit": "14.0.0",
-    "svelte": "5.57.1",
-    "tailwindcss": "4.3.3",
-    "typescript": "6.0.3",
-    "vite": "8.3.0",
-    "vite-plugin-css-injected-by-js": "5.0.2",
-    "vitest": "5.0.1",
-    "vitest-browser-svelte": "3.1.0"
+    "@rslib/core": "catalog:tooling",
+    "@size-limit/esbuild": "catalog:tooling",
+    "@size-limit/file": "catalog:tooling",
+    "@tailwindcss/postcss": "catalog:tailwind",
+    "@tailwindcss/vite": "catalog:tailwind",
+    "@vitest/browser": "catalog:tooling",
+    "@vitest/browser-playwright": "catalog:tooling",
+    "@vitest/ui": "catalog:tooling",
+    "alien-signals": "3.2.1",
+    "playwright": "catalog:tooling",
+    "size-limit": "catalog:tooling",
+    "tailwindcss": "catalog:tailwind",
+    "typescript": "catalog:core",
+    "vite": "catalog:tooling",
+    "vitest": "catalog:tooling"
   }
 }
