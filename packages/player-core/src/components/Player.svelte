@@ -13,7 +13,7 @@ import {
   IDENTITY_ZOOM_TRANSFORM,
 } from "../core/geometry";
 import {
-  applyInheritedZoomOut,
+  applyInheritedZoom,
   applyMediaZoom,
   resolveTiming,
   ZOOM_ANIMATION_DELAY_MS,
@@ -211,12 +211,11 @@ function renderStep(newIndex: number, previousIndex: number): void {
 
 function renderVideoStep(step: VideoStep, previousIndex: number): void {
   const previousStep = demo.steps[previousIndex];
-  // A plain video step (no zoom of its own) right after a zoomed photo: rather than the
-  // photo's zoom-out vanishing unseen (it's hidden the instant this render happens), the
-  // video inherits that same framing and eases out of it itself. A video step with its OWN
-  // panZoom keeps its normal entry behavior — this only fills the "nothing configured" gap.
+  // A video step right after a zoomed photo: rather than restarting from full frame (the
+  // photo is hidden the instant this render happens), the video inherits that same framing
+  // and moves on from it itself — into its own zoom, or back out to identity if it has none.
   const inheritedZoom =
-    !step.panZoom && previousStep && isPhotoStep(previousStep)
+    previousStep && isPhotoStep(previousStep)
       ? previousStep.panZoom
       : undefined;
 
@@ -244,9 +243,10 @@ function renderVideoStep(step: VideoStep, previousIndex: number): void {
   };
 
   if (inheritedZoom) {
-    applyInheritedZoomOut(
+    applyInheritedZoom(
       videoTarget,
       inheritedZoom,
+      step.panZoom,
       () => currentStepRef === step,
     );
   } else {

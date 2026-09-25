@@ -2,7 +2,7 @@ import type { PanZoom } from "@rustrak/openshowcase-schema";
 import { describe, expect, it, vi } from "vitest";
 import { IDENTITY_ZOOM_TRANSFORM, zoomTransform } from "../../core/geometry";
 import {
-  applyInheritedZoomOut,
+  applyInheritedZoom,
   applyMediaZoom,
   type MediaZoomScheduler,
   type MediaZoomTarget,
@@ -121,7 +121,7 @@ describe("applyMediaZoom", () => {
   });
 });
 
-describe("applyInheritedZoomOut", () => {
+describe("applyInheritedZoom", () => {
   it("starts instantly at the given zoom (no re-entry flash) and eases back to identity using its own timing", () => {
     const target = createTarget();
     const { scheduler, runFrames } = createFakeScheduler();
@@ -133,7 +133,7 @@ describe("applyInheritedZoomOut", () => {
       easing: "smooth",
     };
 
-    applyInheritedZoomOut(target, panZoom, () => true, scheduler);
+    applyInheritedZoom(target, panZoom, undefined, () => true, scheduler);
 
     expect(target.setTransformInstant).toHaveBeenCalledWith(true);
     expect(target.setTransform).toHaveBeenCalledWith(zoomTransform(panZoom));
@@ -148,12 +148,39 @@ describe("applyInheritedZoomOut", () => {
     );
   });
 
+  it("moves straight from the inherited zoom to its own zoom, using its own timing", () => {
+    const target = createTarget();
+    const { scheduler, runFrames } = createFakeScheduler();
+    const from: PanZoom = { x: 0.2, y: 0.3, scale: 2, duration: 700 };
+    const to: PanZoom = {
+      x: 0.7,
+      y: 0.6,
+      scale: 1.5,
+      duration: 400,
+      easing: "linear",
+    };
+
+    applyInheritedZoom(target, from, to, () => true, scheduler);
+
+    expect(target.setTransformInstant).toHaveBeenCalledWith(true);
+    expect(target.setTransform).toHaveBeenCalledWith(zoomTransform(from));
+
+    runFrames();
+
+    expect(target.setTransformInstant).toHaveBeenLastCalledWith(false);
+    expect(target.setTransitionTiming).toHaveBeenCalledWith(400, LINEAR_CSS);
+    expect(target.setTransform).toHaveBeenLastCalledWith(zoomTransform(to));
+    expect(target.setTransform).not.toHaveBeenCalledWith(
+      IDENTITY_ZOOM_TRANSFORM,
+    );
+  });
+
   it("does not ease out once the step is no longer current", () => {
     const target = createTarget();
     const { scheduler, runFrames } = createFakeScheduler();
     const panZoom: PanZoom = { x: 0.5, y: 0.5, scale: 2 };
 
-    applyInheritedZoomOut(target, panZoom, () => false, scheduler);
+    applyInheritedZoom(target, panZoom, undefined, () => false, scheduler);
     runFrames();
 
     expect(target.setTransform).toHaveBeenCalledTimes(1); // only the instant starting frame
