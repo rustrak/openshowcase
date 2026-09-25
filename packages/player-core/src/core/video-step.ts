@@ -48,22 +48,33 @@ export interface VideoStepCallbacks {
   onEnded: () => void;
 }
 
+/**
+ * Whether a zoomed clip hands its framing over to `next` instead of zooming out before its
+ * end: a zoomed step moves on to its own zoom straight from the clip's framing (a photo via
+ * `applyInheritedZoom`, a clip because the video layer just keeps its transform), so easing
+ * out first would only make the camera bounce.
+ */
+export function handsZoomTo(next: Step | undefined): boolean {
+  return next?.panZoom != null;
+}
+
 /** Seeks (unless contiguous), starts playback, and wires up the clip watcher for a video step. */
 export function startVideoStep(
   video: HTMLVideoElement,
   step: VideoStep,
   wasContiguous: boolean,
   callbacks: VideoStepCallbacks,
-  continuesIntoNext = false,
+  next?: Step,
 ): VideoClipWatcherHandle {
   video.playbackRate = step.playbackRate ?? 1;
   if (!wasContiguous) video.currentTime = step.startTime;
   void playVideo(video);
 
-  const zoomOutLeadSec = step.panZoom
-    ? (step.panZoom.duration ?? defaultPanZoomTiming.duration) / 1000 +
-      ZOOM_OUT_SAFETY_MARGIN_SEC
-    : undefined;
+  const zoomOutLeadSec =
+    step.panZoom && !handsZoomTo(next)
+      ? (step.panZoom.duration ?? defaultPanZoomTiming.duration) / 1000 +
+        ZOOM_OUT_SAFETY_MARGIN_SEC
+      : undefined;
 
   return watchVideoClip(
     video,
@@ -71,7 +82,7 @@ export function startVideoStep(
       startTime: step.startTime,
       endTime: step.endTime,
       zoomOutLeadSec,
-      continuesIntoNext,
+      continuesIntoNext: continuesInto(step, next),
     },
     {
       onProgress: callbacks.onProgress,

@@ -231,6 +231,94 @@ describe("Player (mount.ts) integration", () => {
     expect(transforms.some((t) => /scale\(1\)/.test(t))).toBe(false);
   });
 
+  it("carries a zoomed video's framing straight into the zoomed photo step after it", async () => {
+    // no real clip to decode here: play() is stubbed and the video step is ended by hand
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const onStepChange = vi.fn();
+    player = new Player({
+      container,
+      onStepChange,
+      demo: {
+        id: "demo-4",
+        title: "Zoomed video then zoomed photo",
+        theme: { wrapper: "none", autoplay: false, appearance: "light" },
+        video: {
+          src: "data:video/webm;base64,",
+          width: 800,
+          height: 600,
+          durationSec: 10,
+        },
+        steps: [
+          {
+            id: "clip",
+            type: "video",
+            startTime: 0,
+            endTime: 5,
+            panZoom: { x: 0.7, y: 0.6, scale: 1.5 },
+          },
+          {
+            id: "photo",
+            type: "photo",
+            image: { src: TINY_PNG, width: 800, height: 600 },
+            hotspot: { x: 0.5, y: 0.5, label: "Click here" },
+            panZoom: { x: 0.2, y: 0.3, scale: 2 },
+          },
+        ],
+      },
+    });
+    player.mount();
+    await vi.waitFor(() => expect(onStepChange).toHaveBeenCalled());
+    const img = container.querySelector(
+      "img.media:last-of-type",
+    ) as HTMLImageElement;
+    const shownTransforms: string[] = [];
+    new MutationObserver(() => {
+      if (img.style.display === "block")
+        shownTransforms.push(img.style.transform);
+    }).observe(img, { attributes: true, attributeFilter: ["style"] });
+
+    player.next();
+
+    await vi.waitFor(() => expect(img.style.transform).toContain("scale(2)"));
+    expect(shownTransforms[0]).toContain("scale(1.5)");
+    expect(shownTransforms.some((t) => /scale\(1\)/.test(t))).toBe(false);
+  });
+
+  it("moves straight from one zoomed photo's framing to the next one's", async () => {
+    const onStepChange = vi.fn();
+    const demo = createDemo();
+    demo.steps = [
+      {
+        id: "zoom-a",
+        type: "photo",
+        image: { src: TINY_PNG, width: 800, height: 600 },
+        panZoom: { x: 0.7, y: 0.6, scale: 1.5, duration: 50 },
+      },
+      {
+        id: "zoom-b",
+        type: "photo",
+        image: { src: TINY_PNG, width: 800, height: 600 },
+        panZoom: { x: 0.2, y: 0.3, scale: 2 },
+      },
+    ];
+    player = new Player({ container, demo, onStepChange });
+    player.mount();
+    const img = container.querySelector(
+      "img.media:last-of-type",
+    ) as HTMLImageElement;
+    await vi.waitFor(() => expect(img.style.transform).toContain("scale(1.5)"));
+    const transforms: string[] = [];
+    new MutationObserver(() => transforms.push(img.style.transform)).observe(
+      img,
+      { attributes: true, attributeFilter: ["style"] },
+    );
+
+    player.next();
+
+    await vi.waitFor(() => expect(img.style.transform).toContain("scale(2)"));
+    expect(transforms.some((t) => /scale\(1\)/.test(t))).toBe(false);
+  });
+
   it("destroys cleanly, leaving the container empty", async () => {
     player = new Player({ container, demo: createDemo() });
     player.mount();

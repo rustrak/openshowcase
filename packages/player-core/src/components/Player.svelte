@@ -26,7 +26,6 @@ import {
 import { StepMachine } from "../core/step-machine";
 import type { VideoClipWatcherHandle } from "../core/video-clip-watcher";
 import {
-  continuesInto,
   isContiguousPlayback,
   startVideoStep,
   whenAtTime,
@@ -121,6 +120,7 @@ let segments = $state<NavbarSegment[]>(
 let videoObjectUrl: string | undefined;
 let videoWatchHandle: VideoClipWatcherHandle | undefined;
 let currentStepRef: Step | undefined;
+let previousStepRef: Step | undefined;
 
 const overlay = new PhotoOverlayController({
   setHotspot: (hotspot) => {
@@ -187,6 +187,7 @@ function renderStep(newIndex: number, previousIndex: number): void {
   const step = demo.steps[newIndex];
   if (!step) return;
   index = newIndex;
+  previousStepRef = demo.steps[previousIndex];
   currentStepRef = step;
   videoWatchHandle?.cancel();
   videoWatchHandle = undefined;
@@ -289,7 +290,7 @@ function renderVideoStep(step: VideoStep, previousIndex: number): void {
           next();
         },
       },
-      continuesInto(step, demo.steps[index + 1]),
+      demo.steps[index + 1],
     );
   });
 }
@@ -333,23 +334,43 @@ function handlePhotoReady(): void {
   video.transform = IDENTITY_ZOOM_TRANSFORM;
   photo.visible = true;
 
-  applyMediaZoom(
-    {
-      setTransform: (transform) => {
-        photo.transform = transform;
-      },
-      setTransformInstant: (instant) => {
-        photo.transformInstant = instant;
-      },
-      setTransitionTiming: (ms, easing) => {
-        photo.transitionMs = ms;
-        photo.transitionEasing = easing;
-      },
+  const photoTarget = {
+    setTransform: (transform: string) => {
+      photo.transform = transform;
     },
-    step.panZoom,
-    wasHidden,
-    () => currentStepRef === step,
-  );
+    setTransformInstant: (instant: boolean) => {
+      photo.transformInstant = instant;
+    },
+    setTransitionTiming: (ms: number, easing: string) => {
+      photo.transitionMs = ms;
+      photo.transitionEasing = easing;
+    },
+  };
+  const previousStep = previousStepRef;
+  // A zoomed photo right after a zoomed clip: the clip kept its zoom to the end (see
+  // handsZoomTo), so the photo picks up that framing and moves on to its own zoom from there
+  // instead of restarting from full frame.
+  if (
+    wasHidden &&
+    step.panZoom &&
+    previousStep &&
+    isVideoStep(previousStep) &&
+    previousStep.panZoom
+  ) {
+    applyInheritedZoom(
+      photoTarget,
+      previousStep.panZoom,
+      step.panZoom,
+      () => currentStepRef === step,
+    );
+  } else {
+    applyMediaZoom(
+      photoTarget,
+      step.panZoom,
+      wasHidden,
+      () => currentStepRef === step,
+    );
+  }
 
   const anchor = step.hotspot ? computeAnchor(step, step.hotspot) : undefined;
   // The hotspot/tooltip are positioned at their POST-zoom coordinates (see computeAnchorPoint)
