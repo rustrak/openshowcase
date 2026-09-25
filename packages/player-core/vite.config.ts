@@ -23,9 +23,9 @@ export default defineConfig({
       formats: ["es"],
       fileName: () => "index.js",
     },
-    // The schema (and zod behind it) is a declared dependency, not something to inline:
+    // The schema (and valibot behind it) is a declared dependency, not something to inline:
     // every consumer already has it (the adapters import `parseDemo` from it), so bundling
-    // a private copy here only doubled zod in the host app.
+    // a private copy here only doubled valibot in the host app.
     rollupOptions: {
       external: ["@rustrak/openshowcase-schema"],
     },

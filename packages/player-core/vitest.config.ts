@@ -5,10 +5,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [tailwindcss(), svelte()],
-  // Pre-bundle zod up front — the integration test is the first to pull in @rustrak/openshowcase-schema's
+  // Pre-bundle valibot up front — the integration test is the first to pull in @rustrak/openshowcase-schema's
   // runtime code inside the browser project, and an on-demand optimize mid-run forces Vite
   // to reload the page, breaking whatever test was in flight.
-  optimizeDeps: { include: ["@rustrak/openshowcase-schema > zod"] },
+  optimizeDeps: { include: ["@rustrak/openshowcase-schema > valibot"] },
   test: {
     projects: [
       {

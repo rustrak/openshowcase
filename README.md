@@ -72,7 +72,7 @@ load `apps/extension/.output/chrome-mv3` unpacked.
 
 ```
 apps/extension/        Chrome extension: recorder + editor (WXT + React)
-packages/schema/       Demo format: Zod schema + TypeScript types
+packages/schema/       Demo format: Valibot schema + TypeScript types
 packages/player-core/  Framework-agnostic playback engine
 packages/exporter/     Builds the exported bundle in the browser
 adapters/player-react/ <InteractiveDemo /> for React

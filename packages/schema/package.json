@@ -1,14 +1,14 @@
 {
   "name": "@rustrak/openshowcase-schema",
   "version": "0.1.0",
-  "description": "Zod schema and TypeScript types for the OpenShowcase interactive demo format",
+  "description": "Valibot schema and TypeScript types for the OpenShowcase interactive demo format",
   "keywords": [
     "openshowcase",
     "interactive-demo",
     "product-demo",
     "product-tour",
     "schema",
-    "zod"
+    "valibot"
   ],
   "license": "MIT",
   "author": "AbianS",
@@ -41,10 +41,16 @@
     "build": "rslib build",
     "dev": "rslib build --watch",
     "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "size": "size-limit"
   },
-  "dependencies": {
-    "zod": "4.6.5"
+  "devDependencies": {
+    "@rslib/core": "1.0.1",
+    "@size-limit/file": "14.0.0",
+    "size-limit": "14.0.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.1"
   },
   "size-limit": [
     {
@@ -53,10 +59,7 @@
       "limit": "3 KB"
     }
   ],
-  "devDependencies": {
-    "@rslib/core": "1.0.1",
-    "@size-limit/file": "14.0.0",
-    "size-limit": "14.0.0",
-    "typescript": "6.0.3"
+  "dependencies": {
+    "valibot": "1.5.0"
   }
 }
