@@ -1,6 +1,6 @@
 /*
  * The player's hotspot + tooltip look, mirrored for the editor stage so what you edit is what
- * ships. Source of truth: packages/player-core/src/components/{Hotspot,Tooltip,PhotoLayer}.svelte
+ * ships. Source of truth: packages/player-core/src/ui/{Hotspot,Tooltip,PhotoLayer}/*.styles.ts
  * and packages/player-core/src/app.css (the --wd-* tokens). Keep the two in sync — these are
  * demo visuals, not editor UI, which is why they use literal colors instead of theme tokens.
  */
@@ -186,7 +186,7 @@
   }
 }
 
-/* the body: box + tail as one SVG outline (see HotspotLayer / player's Tooltip.svelte) */
+/* the body: box + tail as one SVG outline (see HotspotLayer / player-core ui/Tooltip/Tooltip.ts) */
 .wd-body {
   position: absolute;
   inset: 0 auto auto 0;

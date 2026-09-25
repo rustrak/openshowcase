@@ -1,14 +1,19 @@
 import { describe, expect, it, vi } from "vitest";
-import { render } from "vitest-browser-svelte";
-import PhotoLayer from "../../components/PhotoLayer.svelte";
+import {
+  PhotoLayer,
+  type PhotoLayerProps,
+} from "../../ui/PhotoLayer/PhotoLayer";
+import { renderView } from "../render-view";
 
 const TINY_PNG =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=";
 const stageSize = { width: 400, height: 300 };
 
+const render = (props: PhotoLayerProps) => renderView(PhotoLayer, props);
+
 describe("PhotoLayer", () => {
   it("renders the image with the given src/alt and toggles display with visible", async () => {
-    const screen = await render(PhotoLayer, {
+    const screen = await render({
       visible: true,
       src: TINY_PNG,
       alt: "Step 1",
@@ -24,7 +29,7 @@ describe("PhotoLayer", () => {
 
   it("calls onReady once the image has decoded", async () => {
     const onReady = vi.fn();
-    await render(PhotoLayer, {
+    await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -37,7 +42,7 @@ describe("PhotoLayer", () => {
   });
 
   it("shows the spotlight only when visible and a hotspot is present", async () => {
-    const withHotspot = await render(PhotoLayer, {
+    const withHotspot = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -53,7 +58,7 @@ describe("PhotoLayer", () => {
     });
     expect(withHotspot.container.querySelector(".spotlight")).not.toBeNull();
 
-    const withoutHotspot = await render(PhotoLayer, {
+    const withoutHotspot = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -64,7 +69,7 @@ describe("PhotoLayer", () => {
   });
 
   it("renders the hotspot only when visible and present", async () => {
-    const screen = await render(PhotoLayer, {
+    const screen = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -79,7 +84,7 @@ describe("PhotoLayer", () => {
 
   it("mounts the tooltip whenever tooltip data is present, regardless of its visible flag", async () => {
     // it must exist in the DOM (so it can self-measure) even before its opacity fades in
-    const screen = await render(PhotoLayer, {
+    const screen = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -101,7 +106,7 @@ describe("PhotoLayer", () => {
 
   it("calls onHotspotAdvance when the hotspot is clicked", async () => {
     const onHotspotAdvance = vi.fn();
-    const screen = await render(PhotoLayer, {
+    const screen = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -126,7 +131,7 @@ describe("PhotoLayer", () => {
     // hover the tooltip (the topmost, never-occluded element) and check it highlights the
     // hotspot too — hovering the hotspot itself is flaky here since the tooltip callout can
     // render on top of it depending on where computeTooltipPlacement puts it.
-    const screen = await render(PhotoLayer, {
+    const screen = await render({
       visible: true,
       src: TINY_PNG,
       alt: "",
@@ -175,7 +180,7 @@ describe("PhotoLayer", () => {
         text: "Click me",
       },
     };
-    const screen = await render(PhotoLayer, props);
+    const screen = await render(props);
     await screen.getByText("Click me").hover();
     const hotspot = () =>
       screen.getByRole("button", { name: "Hotspot" }).element() as HTMLElement;
@@ -207,7 +212,7 @@ describe("PhotoLayer", () => {
         appear: true,
       },
     };
-    const screen = await render(PhotoLayer, props);
+    const screen = await render(props);
     const first = screen.container.querySelector(".spotlight");
     expect(first).not.toBeNull();
 
@@ -240,7 +245,7 @@ describe("PhotoLayer", () => {
         appear: true,
       },
     };
-    const screen = await render(PhotoLayer, props);
+    const screen = await render(props);
     for (let i = 1; i <= 6; i++) {
       await screen.rerender({
         ...props,
@@ -263,5 +268,35 @@ describe("PhotoLayer", () => {
         expect(screen.container.querySelectorAll(".spotlight")).toHaveLength(1),
       { timeout: 2000 },
     );
+  });
+
+  it("hides the hotspot and tooltip with an exit, then removes them", async () => {
+    const props = {
+      visible: true,
+      src: TINY_PNG,
+      alt: "",
+      transform: "none",
+      stageSize,
+      hotspot: {
+        left: 50,
+        top: 50,
+        color: "#111",
+        instant: true,
+        appear: false,
+      },
+      tooltip: { anchor: { left: 50, top: 50 }, visible: true, text: "Bye" },
+    };
+    const screen = await render(props);
+    const hotspot = screen.getByRole("button", { name: "Hotspot" }).element();
+
+    await screen.rerender({ ...props, hotspot: undefined, tooltip: undefined });
+
+    // still there while it fades out, at the same spot
+    expect(hotspot.isConnected).toBe(true);
+    expect((hotspot as HTMLElement).style.left).toBe("50px");
+    await vi.waitFor(() => {
+      expect(hotspot.isConnected).toBe(false);
+      expect(screen.container.querySelector(".tooltip")).toBeNull();
+    });
   });
 });

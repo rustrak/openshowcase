@@ -168,7 +168,7 @@ export function HotspotLayer({
             } as React.CSSProperties
           }
         >
-          {/* Same anatomy as the player's hotspot (Hotspot.svelte) */}
+          {/* Same anatomy as the player's hotspot (player-core ui/Hotspot/Hotspot.ts) */}
           <span className="wd-dot">
             <span className="wd-halo" />
             <span className="wd-ripple" />
@@ -221,7 +221,7 @@ function TooltipBubble({
 
   const bg = hotspot.bgColor ?? defaultHotspotStyle.bgColor;
   const placement = layout?.placement;
-  // Box + tail as one outline — identical to the player's Tooltip.svelte.
+  // Box + tail as one outline — identical to the player's tooltip (player-core ui/Tooltip/Tooltip.ts).
   const d = layout
     ? bubblePath({
         width: layout.width,

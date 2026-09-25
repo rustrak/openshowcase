@@ -83,7 +83,7 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.svelte", "**/*.vue"],
+      "includes": ["**/*.vue"],
       "linter": {
         "rules": {
           "style": {

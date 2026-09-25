@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { render } from "vitest-browser-svelte";
-import Navbar from "../../components/Navbar.svelte";
-import type { NavbarSegment } from "../../components/types";
+import {
+  Navbar,
+  type NavbarProps,
+  type NavbarSegment,
+} from "../../ui/Navbar/Navbar";
+import { renderView } from "../render-view";
 
 function segments(): NavbarSegment[] {
   return [
@@ -11,9 +14,11 @@ function segments(): NavbarSegment[] {
   ];
 }
 
+const render = (props: NavbarProps) => renderView(Navbar, props);
+
 describe("Navbar", () => {
   it("renders one segment per step with the right fill width", async () => {
-    const screen = await render(Navbar, { segments: segments() });
+    const screen = await render({ segments: segments() });
 
     const fills = screen.container.querySelectorAll(".segment-fill");
     expect(fills).toHaveLength(3);
@@ -23,7 +28,7 @@ describe("Navbar", () => {
   });
 
   it("marks the done segment with the done fill class and the active one with the active class", async () => {
-    const screen = await render(Navbar, { segments: segments() });
+    const screen = await render({ segments: segments() });
     const buttons = screen.container.querySelectorAll(".segment");
     const fills = screen.container.querySelectorAll(".segment-fill");
 
@@ -34,7 +39,7 @@ describe("Navbar", () => {
 
   it("calls onSeek with the clicked segment index", async () => {
     const onSeek = vi.fn();
-    const screen = await render(Navbar, {
+    const screen = await render({
       segments: segments(),
       visible: true,
       onSeek,
@@ -48,7 +53,7 @@ describe("Navbar", () => {
   it("calls onPrev and onNext from the nav buttons", async () => {
     const onPrev = vi.fn();
     const onNext = vi.fn();
-    const screen = await render(Navbar, {
+    const screen = await render({
       segments: segments(),
       visible: true,
       onPrev,
@@ -63,14 +68,39 @@ describe("Navbar", () => {
   });
 
   it("doesn't take pointer events while hidden, so hotspots underneath stay clickable", async () => {
-    const hidden = await render(Navbar, { segments: segments() });
+    const hidden = await render({ segments: segments() });
     const bar = hidden.container.querySelector(".navbar") as HTMLElement;
     expect(getComputedStyle(bar).pointerEvents).toBe("none");
 
-    const shown = await render(Navbar, { segments: segments(), visible: true });
+    const shown = await render({ segments: segments(), visible: true });
     const shownBar = shown.container.querySelector(
       ".navbar--visible",
     ) as HTMLElement;
     expect(getComputedStyle(shownBar).pointerEvents).toBe("auto");
+  });
+
+  it("follows prop changes: progress, active step and counter update in place", async () => {
+    const screen = await render({ segments: segments() });
+    const fill = () =>
+      screen.container.querySelectorAll<HTMLElement>(".segment-fill")[1];
+    const before = fill();
+
+    await screen.rerender({
+      segments: [
+        { progress: 1, active: false, done: true },
+        { progress: 1, active: false, done: true },
+        { progress: 0.25, active: true, done: false },
+      ],
+    });
+
+    expect(fill()).toBe(before);
+    expect(before?.style.width).toBe("100%");
+    expect(before?.classList.contains("segment-fill--done")).toBe(true);
+    expect(
+      screen.container
+        .querySelectorAll(".segment")[2]
+        ?.classList.contains("segment--active"),
+    ).toBe(true);
+    expect(screen.container.querySelector(".counter")?.textContent).toBe("3/3");
   });
 });
