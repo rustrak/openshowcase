@@ -76,6 +76,8 @@ let stageSize = $state({ width: 0, height: 0 });
 let photo = $state<{
   visible: boolean;
   src: string;
+  /** Bumped per photo step render: PhotoLayer re-reports ready even when `src` is unchanged. */
+  renderId: number;
   alt: string;
   transform: string;
   transformInstant: boolean;
@@ -86,6 +88,7 @@ let photo = $state<{
 }>({
   visible: false,
   src: "",
+  renderId: 0,
   alt: "",
   transform: IDENTITY_ZOOM_TRANSFORM,
   transformInstant: false,
@@ -308,6 +311,7 @@ function renderPhotoStep(step: PhotoStep, previousIndex: number): void {
     overlay.hide();
   }
   photo.src = resolveAssetUrl(step.image.src, assetBaseUrl);
+  photo.renderId += 1;
   photo.alt = step.hotspot?.label ?? `Step ${index + 1}`;
   // the actual reveal happens in handlePhotoReady, once PhotoLayer's decode resolves
 }
@@ -485,6 +489,7 @@ onMount(() => {
       <PhotoLayer
         visible={photo.visible}
         src={photo.src}
+        renderId={photo.renderId}
         alt={photo.alt}
         transform={photo.transform}
         transformInstant={photo.transformInstant}

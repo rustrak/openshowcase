@@ -22,9 +22,12 @@ interface Props {
   stageSize: { width: number; height: number };
   hotspot?: PhotoHotspotVisual;
   tooltip?: PhotoTooltipVisual;
-  /** Fires once per `src` change, after the browser has decoded the new frame (or failed to) —
-   * the signal the parent waits for before swapping video/photo visibility, so the swap never
-   * flashes a not-yet-decoded frame. */
+  /** Bumped by the parent for every photo step it shows, so showing the same `src` again (e.g.
+   * returning to a photo after replaying the video before it) still fires `onReady`. */
+  renderId?: number;
+  /** Fires once per `src`/`renderId` change, after the browser has decoded the new frame (or
+   * failed to) — the signal the parent waits for before swapping video/photo visibility, so the
+   * swap never flashes a not-yet-decoded frame. */
   onReady?: () => void;
   /** Clicking the hotspot/tooltip themselves always means "seen it, continue". */
   onHotspotAdvance?: () => void;
@@ -41,6 +44,7 @@ let {
   stageSize,
   hotspot,
   tooltip,
+  renderId = 0,
   onReady,
   onHotspotAdvance,
 }: Props = $props();
@@ -59,8 +63,10 @@ let lastShown: { src: string; transform: string; visible: boolean } | null =
   null;
 
 $effect(() => {
-  // re-run whenever `src` changes; decode (success or failure) is the "ready to reveal" signal.
-  // The cleanup guards against a superseded decode (rapid navigation) reporting ready late.
+  // re-run whenever `src` or `renderId` changes; decode (success or failure) is the "ready to
+  // reveal" signal. The cleanup guards against a superseded decode (rapid navigation) reporting
+  // ready late.
+  void renderId;
   const current = src;
   const el = imgEl;
   if (!el) return;
