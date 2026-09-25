@@ -177,6 +177,60 @@ describe("Player (mount.ts) integration", () => {
     await vi.waitFor(() => expect(hotspot()).not.toBeNull());
   });
 
+  it("carries a zoomed photo's framing straight into the zoomed video step after it", async () => {
+    // no real clip to decode here: play() is stubbed and the video step never ends
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const onStepChange = vi.fn();
+    player = new Player({
+      container,
+      onStepChange,
+      demo: {
+        id: "demo-3",
+        title: "Zoomed photo then zoomed video",
+        theme: { wrapper: "none", autoplay: false, appearance: "light" },
+        video: {
+          src: "data:video/webm;base64,",
+          width: 800,
+          height: 600,
+          durationSec: 10,
+        },
+        steps: [
+          {
+            id: "photo",
+            type: "photo",
+            image: { src: TINY_PNG, width: 800, height: 600 },
+            panZoom: { x: 0.2, y: 0.3, scale: 2 },
+          },
+          {
+            id: "clip",
+            type: "video",
+            startTime: 0,
+            // long enough that the zoom-out cue before the clip's end doesn't fire right away
+            endTime: 5,
+            panZoom: { x: 0.7, y: 0.6, scale: 1.5 },
+          },
+        ],
+      },
+    });
+    player.mount();
+    await vi.waitFor(() => expect(onStepChange).toHaveBeenCalled());
+    const video = container.querySelector("video") as HTMLVideoElement;
+    const transforms: string[] = [];
+    new MutationObserver(() => transforms.push(video.style.transform)).observe(
+      video,
+      { attributes: true, attributeFilter: ["style"] },
+    );
+
+    player.next();
+
+    await vi.waitFor(() => expect(video.style.display).toBe("block"));
+    await vi.waitFor(() =>
+      expect(video.style.transform).toContain("scale(1.5)"),
+    );
+    expect(transforms[0]).toContain("scale(2)");
+    expect(transforms.some((t) => /scale\(1\)/.test(t))).toBe(false);
+  });
+
   it("destroys cleanly, leaving the container empty", async () => {
     player = new Player({ container, demo: createDemo() });
     player.mount();

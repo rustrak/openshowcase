@@ -82,25 +82,27 @@ export function applyMediaZoom(
 }
 
 /**
- * For a video step with no zoom of its own, immediately following a photo step that WAS
- * zoomed in: starts the video already at that same framing (no re-entry flash, no delay
- * before the video appears) and eases it back to identity right away, using the outgoing
- * photo's own duration/easing — the zoom-out plays out on the video instead of vanishing
- * with the (now-hidden) photo.
+ * For a video step immediately following a photo step that WAS zoomed in: starts the video
+ * already at that same framing (no re-entry flash, no delay before the video appears) and
+ * moves on from it right away — to the video's own zoom with its own duration/easing, like
+ * two consecutive zoomed photos, or, when the video has no zoom, back to identity with the
+ * outgoing photo's timing, so the zoom-out plays out on the video instead of vanishing with
+ * the (now-hidden) photo.
  */
-export function applyInheritedZoomOut(
+export function applyInheritedZoom(
   target: MediaZoomTarget,
-  panZoomToLeave: PanZoom,
+  inherited: PanZoom,
+  own: PanZoom | undefined,
   isStillCurrent: () => boolean,
   scheduler: MediaZoomScheduler = defaultScheduler,
 ): void {
   target.setTransformInstant(true);
-  target.setTransform(zoomTransform(panZoomToLeave));
+  target.setTransform(zoomTransform(inherited));
   scheduler.frame(() => {
     if (!isStillCurrent()) return;
     target.setTransformInstant(false);
-    const { ms, css } = resolveTiming(panZoomToLeave);
+    const { ms, css } = resolveTiming(own ?? inherited);
     target.setTransitionTiming(ms, css);
-    target.setTransform(IDENTITY_ZOOM_TRANSFORM);
+    target.setTransform(own ? zoomTransform(own) : IDENTITY_ZOOM_TRANSFORM);
   });
 }
