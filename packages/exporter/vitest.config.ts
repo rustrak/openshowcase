@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 // (browser-only APIs), and buildDemoBundle calls into it for any non-webp photo step.
 export default defineConfig({
   // Pre-bundle up front — an on-demand optimize mid-run forces Vite to reload the page,
-  // breaking whatever test was in flight (same issue player-core hit with zod).
+  // breaking whatever test was in flight (same issue player-core hit with the schema's validator).
   optimizeDeps: { include: ["jszip"] },
   test: {
     include: ["src/__test__/unit/**/*.test.ts"],

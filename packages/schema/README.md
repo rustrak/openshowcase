@@ -1,6 +1,6 @@
 # @rustrak/openshowcase-schema
 
-The [OpenShowcase](https://github.com/rustrak/openshowcase) demo format (`steps.json`): a Zod schema and TypeScript types.
+The [OpenShowcase](https://github.com/rustrak/openshowcase) demo format (`steps.json`): a [Valibot](https://valibot.dev) schema and TypeScript types.
 
 ## Install
 
@@ -16,7 +16,19 @@ import { parseDemo, type Demo } from "@rustrak/openshowcase-schema";
 const demo: Demo = parseDemo(await (await fetch("/demos/my-demo/steps.json")).json());
 ```
 
-`parseDemo` throws a `ZodError` if the data doesn't match the schema.
+`parseDemo` throws a `DemoParseError` if the data doesn't match the schema. Its `issues` list each problem with the dot path to the offending value:
+
+```ts
+import { DemoParseError, parseDemo } from "@rustrak/openshowcase-schema";
+
+try {
+  parseDemo(json);
+} catch (error) {
+  if (error instanceof DemoParseError) {
+    console.error(error.issues); // [{ path: "steps.1.hotspot.x", message: "..." }]
+  }
+}
+```
 
 ## Format overview
 
