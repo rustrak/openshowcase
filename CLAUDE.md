@@ -22,6 +22,7 @@ Each workspace has its own `CLAUDE.md` with its build, test and gotcha notes. Re
 - **The exported bundle is pure data:** `steps.json` + `assets/*.avif` (photo frames, encoded at export) + `assets/recording.mp4` (only if there are video steps: just the ranges they play, re-encoded at export; `.webm` if H.264 encoding is unavailable). It never ships a player runtime. The player is an npm component in the host app (`player-react` / `player-vue`).
 - **`packages/schema` is the single source of truth** for the demo format. Read `packages/schema/src/index.ts` for the current shape rather than trusting any copy of it.
 - Pipeline: `content.ts` markers + continuous tab video → `apps/extension/lib/segments.ts` derives steps (click → photo step with hotspot, activity between clicks → video clip) → editor → export (`editor/lib/export-video.ts` re-encodes the played ranges) → exporter → player.
+- **Agent recording** (`packages/recorder`): a CLI plays a JSON flow in headless Chromium with the real extension loaded, which records it through the same pipeline. The recording travels as an `.osrec` file (`apps/extension/lib/recording-file.ts`) that the editor imports. The human always reviews in the editor; the recorder never exports a demo itself.
 
 ## Conventions
 

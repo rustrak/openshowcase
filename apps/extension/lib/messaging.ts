@@ -46,6 +46,8 @@ export interface RecordingSessionState {
   recordingId?: string;
   tabId?: number;
   clickCount?: number;
+  /** Started by the recorder CLI: it takes the recording, so no editor opens on save. */
+  automated?: boolean;
 }
 
 export const defaultRecordingSessionState: RecordingSessionState = {

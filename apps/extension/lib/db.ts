@@ -1,4 +1,5 @@
 import { type DBSchema, type IDBPDatabase, openDB } from "idb";
+import { type RecordingFile, recordsFromFile } from "@/lib/recording-file";
 
 export type RecordingStatus = "recording" | "complete" | "interrupted";
 
@@ -13,6 +14,21 @@ export interface RecordingRecord {
   width: number | null;
   height: number | null;
   tabId: number;
+  /** Editing the recorder CLI's flow asked for (absent on recordings made by hand). */
+  direction?: RecordingDirection;
+}
+
+export interface TimeRange {
+  start: number;
+  end: number;
+}
+
+/** Wall-clock times, like the markers' `capturedAt`. */
+export interface RecordingDirection {
+  /** Waits for the app: cut out of the clips. */
+  cuts: TimeRange[];
+  /** Clips that play an action the flow zoomed into frame on it. */
+  zooms: (TimeRange & { x: number; y: number; scale: number })[];
 }
 
 export type MarkerKind = "click" | "scroll" | "type" | "drag";
@@ -27,6 +43,12 @@ export interface MarkerRecord {
   yFrac?: number;
   selector?: string;
   elementText?: string;
+  /** Tooltip text chosen by whoever recorded (the recorder CLI's flow), over the element text. */
+  label?: string;
+  /** The flow's camera zoom on this click's photo step. */
+  zoom?: number;
+  /** false: the click plays inside a clip instead of becoming a photo step. */
+  hotspot?: boolean;
   pageUrl: string;
 }
 
@@ -152,4 +174,18 @@ export async function listRecentRecordings(
     .filter((record) => record.status === "complete")
     .sort((a, b) => b.createdAt - a.createdAt)
     .slice(0, limit);
+}
+
+/** Stores a recording file (made elsewhere, e.g. by the recorder CLI); resolves with its new id. */
+export async function importRecording(file: RecordingFile): Promise<string> {
+  const id = crypto.randomUUID();
+  const { recording, markers } = recordsFromFile(file, id);
+  const db = await getDb();
+  const tx = db.transaction(["recordings", "markers"], "readwrite");
+  await Promise.all([
+    tx.objectStore("recordings").put(recording),
+    ...markers.map((marker) => tx.objectStore("markers").put(marker)),
+    tx.done,
+  ]);
+  return id;
 }

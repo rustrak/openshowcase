@@ -16,6 +16,14 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "@rustrak/openshowcase-recorder#build": {
+      "dependsOn": ["^build", "@rustrak/openshowcase-extension#build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "outputs": ["dist/**"]
+    },
+    "@rustrak/openshowcase-recorder#test": {
+      "dependsOn": ["^build", "@rustrak/openshowcase-extension#build"]
+    },
     "size": {
       "dependsOn": ["build"]
     },

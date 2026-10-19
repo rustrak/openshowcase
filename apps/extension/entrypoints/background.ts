@@ -1,5 +1,8 @@
+import { createAutomation } from "@/lib/automation";
 import {
   addMarker,
+  getMarkersByRecording,
+  getRecording,
   markRecordingInterrupted,
   markRecordingStarted,
   createRecording as saveRecording,
@@ -24,6 +27,17 @@ export default defineBackground(() => {
   onMessage("recordingSaved", ({ data }) =>
     handleRecordingSaved(data.recordingId),
   );
+
+  // The recorder CLI (packages/recorder) drives recordings over CDP, through this global:
+  // there's no toolbar click in its automated Chromium. Only reachable from DevTools/CDP.
+  Object.assign(globalThis, {
+    openshowcase: createAutomation({
+      startRecording: () => startRecording(undefined, { automated: true }),
+      stopRecording,
+      getRecording,
+      getMarkers: getMarkersByRecording,
+    }),
+  });
 });
 
 async function ensureOffscreenDocument(): Promise<void> {
@@ -95,6 +109,7 @@ const defaultStartRecordingDeps: StartRecordingDeps = {
 
 export async function startRecording(
   deps: StartRecordingDeps = defaultStartRecordingDeps,
+  { automated = false }: { automated?: boolean } = {},
 ): Promise<void> {
   const tab = await deps.getActiveTab();
   if (!tab?.id) return;
@@ -111,6 +126,7 @@ export async function startRecording(
       recordingId,
       tabId: tab.id,
       clickCount: 0,
+      automated,
     });
     await deps.setCounterIcon(0);
 
@@ -212,13 +228,22 @@ async function handleMarker(
   });
 }
 
-async function handleRecordingSaved(recordingId: string): Promise<void> {
+export interface RecordingSavedDeps {
+  setCounterIcon: (count: number | null) => Promise<void>;
+  closeOffscreenDocumentIfOpen: () => Promise<void>;
+}
+
+export async function handleRecordingSaved(
+  recordingId: string,
+  deps: RecordingSavedDeps = { setCounterIcon, closeOffscreenDocumentIfOpen },
+): Promise<void> {
   const state = await recordingSession.getValue();
   if (state.recordingId === recordingId) {
     await patchRecordingSessionState({ active: false });
   }
-  await setCounterIcon(null);
-  await closeOffscreenDocumentIfOpen();
+  await deps.setCounterIcon(null);
+  await deps.closeOffscreenDocumentIfOpen();
+  if (state.automated && state.recordingId === recordingId) return;
   // When the recording ends, open the editor directly.
   await browser.tabs.create({
     url: browser.runtime.getURL(`/editor.html?recordingId=${recordingId}`),

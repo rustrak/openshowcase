@@ -41,6 +41,20 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
 
 <img width="2000" height="1000" alt="export" src="https://github.com/user-attachments/assets/e93fa6a5-1197-462e-ad87-e28adbb459de" />
 
+## Let an AI agent record it
+
+`@rustrak/openshowcase-recorder` lets an agent like Claude Code record the demo
+for you. It scripts the flow, checks it against your app, and records it in a
+headless Chromium with the extension, without touching your browser. You import
+the result in the editor and polish what doesn't convince you.
+
+```sh
+npx @rustrak/openshowcase-recorder install-skill   # adds the Claude Code skill
+```
+
+Then ask: *"record a demo of creating an invoice"*. See the
+[recorder's README](./packages/recorder/README.md) to run it yourself.
+
 ## Embed a demo
 
 Put the `.openshowcase` file in your site's static files and point the player
@@ -77,6 +91,7 @@ apps/extension/        Chrome extension: recorder + editor (WXT + React)
 packages/schema/       Demo format: Valibot schema + TypeScript types
 packages/player-core/  Framework-agnostic playback engine
 packages/exporter/     Builds the exported bundle in the browser
+packages/recorder/     CLI + agent skill: records a scripted flow headlessly
 adapters/player-react/ <InteractiveDemo /> for React
 adapters/player-vue/   <InteractiveDemo /> for Vue
 ```

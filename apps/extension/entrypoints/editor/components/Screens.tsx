@@ -37,9 +37,11 @@ function Shimmer({ className }: { className: string }) {
 export function MessageScreen({
   title,
   text,
+  action,
 }: {
   title: string;
   text: React.ReactNode;
+  action?: React.ReactNode;
 }) {
   return (
     <div className="flex h-full items-center justify-center bg-window p-8">
@@ -53,6 +55,7 @@ export function MessageScreen({
             {text}
           </p>
         </div>
+        {action}
         <div className="mt-6 flex flex-col items-center gap-2">
           <OpenShowcaseWordmark
             still
