@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ImportScreen } from "./components/ImportScreen";
 import { LoadingScreen, MessageScreen } from "./components/Screens";
 import { Editor } from "./Editor";
 import { useRecording } from "./hooks/use-recording";
@@ -15,12 +16,7 @@ function App() {
 
   return (
     <TooltipProvider delay={500}>
-      {state.status === "missing-id" && (
-        <MessageScreen
-          title="No recording selected"
-          text="Record a tab from the OpenShowcase toolbar button — the editor opens by itself when you stop."
-        />
-      )}
+      {state.status === "missing-id" && <ImportScreen />}
       {state.status === "loading" && <LoadingScreen />}
       {state.status === "empty" && (
         <MessageScreen

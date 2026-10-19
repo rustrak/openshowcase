@@ -189,8 +189,8 @@ const DEFAULT_ZOOM_SCALE = 1.8;
  */
 export function defaultPanZoom(
   focus: { x: number; y: number } | undefined,
+  scale = DEFAULT_ZOOM_SCALE,
 ): PanZoom {
-  const scale = DEFAULT_ZOOM_SCALE;
   const half = 0.5 / scale;
   const clampToImage = (v: number) => Math.min(1 - half, Math.max(half, v));
   return {

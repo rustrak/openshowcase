@@ -126,3 +126,95 @@ describe("buildStepPlan", () => {
     expect(plan[0]?.kind).toBe("photo");
   });
 });
+
+describe("buildStepPlan with a recording's direction (recorder CLI)", () => {
+  const noDirection = { cuts: [], zooms: [] };
+
+  it("plays a click marked hotspot: false inside a clip instead of stopping on it", () => {
+    const plan = buildStepPlan(
+      [
+        clickMarker(1000),
+        clickMarker(1800, { hotspot: false }),
+        clickMarker(2500),
+      ],
+      5,
+      0,
+      noDirection,
+    );
+    // the quiet click is activity: the stretch around it stays a clip
+    expect(plan.map((s) => s.kind)).toEqual([
+      "video",
+      "photo",
+      "video",
+      "photo",
+      "video",
+    ]);
+  });
+
+  it("cuts the waits out of the clips, as jump cuts", () => {
+    const plan = buildStepPlan([clickMarker(1000)], 8, 0, {
+      cuts: [{ start: 3000, end: 6000 }],
+      zooms: [],
+    });
+    expect(spans(plan)).toEqual([
+      [0, 0.967],
+      [0.967, 0.967],
+      [0.967, 3],
+      [6, 8],
+    ]);
+  });
+
+  it("drops what's left of a clip when a cut leaves too little of it", () => {
+    const plan = buildStepPlan([clickMarker(1000)], 4, 0, {
+      cuts: [{ start: 1300, end: 4000 }],
+      zooms: [],
+    });
+    expect(plan.map((s) => s.kind)).toEqual(["video", "photo"]);
+  });
+
+  it("doesn't keep a clip for a long gap that is mostly a wait", () => {
+    const plan = buildStepPlan([clickMarker(1000), clickMarker(5000)], 8, 0, {
+      cuts: [{ start: 1500, end: 4500 }],
+      zooms: [],
+    });
+    expect(plan.map((s) => s.kind)).toEqual([
+      "video",
+      "photo",
+      "photo",
+      "video",
+    ]);
+  });
+
+  it("frames a clip on the action the flow zoomed into", () => {
+    const plan = buildStepPlan(
+      [clickMarker(1000), activityMarker("type", 2000)],
+      5,
+      0,
+      {
+        cuts: [],
+        zooms: [{ start: 1500, end: 2500, x: 0.3, y: 0.6, scale: 2 }],
+      },
+    );
+    // The camera moves in a little before the action and out a little after it: the clip
+    // splits there, into contiguous pieces that play straight through.
+    expect(
+      plan.map((s) =>
+        s.kind === "video"
+          ? [s.startTime, s.endTime, s.zoom?.scale ?? null]
+          : "photo",
+      ),
+    ).toEqual([[0, 0.967, null], "photo", [0.967, 3, 2], [3, 5, null]]);
+  });
+
+  it("keeps a zoomed clip whole when what's left around the action is too short", () => {
+    const plan = buildStepPlan([clickMarker(1000)], 3.2, 0, {
+      cuts: [],
+      zooms: [{ start: 1500, end: 2500, x: 0.3, y: 0.6, scale: 2 }],
+    });
+    expect(plan.at(-1)).toMatchObject({
+      startTime: 0.967,
+      endTime: 3.2,
+      zoom: { scale: 2 },
+    });
+  });
+});

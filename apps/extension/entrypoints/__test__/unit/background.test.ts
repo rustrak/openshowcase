@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { fakeBrowser } from "wxt/testing/fake-browser";
 import {
+  handleRecordingSaved,
   type StartRecordingDeps,
   startRecording,
   stopRecording,
@@ -91,6 +92,49 @@ describe("startRecording", () => {
 
     expect(await recordingSession.getValue()).toMatchObject({ active: false });
     expect(counterCalls).toContain(null);
+  });
+
+  it("marks a session started by automation, so saving it opens no editor", async () => {
+    const unlisten = onMessage("offscreenStart", () => {});
+    await startRecording(fakeDeps(), { automated: true });
+    unlisten();
+    expect(await recordingSession.getValue()).toMatchObject({
+      active: true,
+      automated: true,
+    });
+  });
+});
+
+describe("handleRecordingSaved", () => {
+  const savedDeps = {
+    setCounterIcon: async () => {},
+    closeOffscreenDocumentIfOpen: async () => {},
+  };
+
+  it("ends the session and opens the editor on the recording", async () => {
+    await recordingSession.setValue({ active: true, recordingId: "rec-1" });
+    await handleRecordingSaved("rec-1", savedDeps);
+
+    expect(await recordingSession.getValue()).toMatchObject({ active: false });
+    const tabs = await fakeBrowser.tabs.query({});
+    expect(tabs.map((t) => t.url)).toContainEqual(
+      expect.stringContaining("/editor.html?recordingId=rec-1"),
+    );
+  });
+
+  it("opens no editor for an automated recording (the recorder CLI takes it)", async () => {
+    await recordingSession.setValue({
+      active: true,
+      recordingId: "rec-1",
+      automated: true,
+    });
+    await handleRecordingSaved("rec-1", savedDeps);
+
+    expect(await recordingSession.getValue()).toMatchObject({ active: false });
+    const tabs = await fakeBrowser.tabs.query({});
+    expect(tabs.map((t) => t.url)).not.toContainEqual(
+      expect.stringContaining("editor.html"),
+    );
   });
 });
 

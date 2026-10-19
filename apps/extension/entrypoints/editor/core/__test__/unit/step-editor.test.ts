@@ -287,6 +287,14 @@ describe("defaultPanZoom", () => {
     expect(pz.y).toBeCloseTo(1 - half);
   });
 
+  it("takes another scale, still kept inside the image", () => {
+    expect(StepEditor.defaultPanZoom({ x: 0.5, y: 0.98 }, 2.5)).toEqual({
+      x: 0.5,
+      y: 0.8,
+      scale: 2.5,
+    });
+  });
+
   it("centers on the image when there is no focus point", () => {
     expect(StepEditor.defaultPanZoom(undefined)).toMatchObject({
       x: 0.5,

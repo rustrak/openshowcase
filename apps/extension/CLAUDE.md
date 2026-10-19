@@ -4,7 +4,7 @@ WXT + React Chrome extension (MV3) with two jobs: **capture** (continuous tab vi
 
 ## Commands
 
-- `pnpm dev` / `pnpm build` (`:firefox` variants exist). Test manually by loading `.output/chrome-mv3` unpacked. There is no E2E test for recording.
+- `pnpm dev` / `pnpm build` (`:firefox` variants exist). Test manually by loading `.output/chrome-mv3` unpacked. The recording E2E test lives in `packages/recorder` (`src/__test__/e2e`): it records a flow with this build in headless Chromium and imports the result in the editor.
 - `pnpm test`: Vitest in Node with WXT's `fakeBrowser` (in-memory `browser.*`/`chrome.*`). No real DOM, canvas or IndexedDB.
 - `postinstall` runs `wxt prepare` to generate `.wxt/` types.
 
@@ -18,6 +18,14 @@ WXT + React Chrome extension (MV3) with two jobs: **capture** (continuous tab vi
 - On stop, the webm is remuxed without re-encoding (`offscreen/lib/remux.ts`, Mediabunny) to add Duration + Cues. Raw MediaRecorder webm seeks slowly and imprecisely.
 - Chrome burns the real cursor into tab captures. `lib/segments.ts` only keeps a video clip between clicks when there is activity (scroll/type/drag) or the gap is ≥3s. Otherwise the steps go photo → photo and the hotspot glides. Fast-forwarding idle stretches was tried and rejected.
 - The content script checks `ctx.isInvalid` (not `isInvalidated`) and detaches listeners in `ctx.onInvalidated`. An orphaned script after an extension reload would otherwise throw "Extension context invalidated" forever.
+
+## Recordings from the recorder CLI
+
+- `lib/automation.ts` is the API `packages/recorder` calls over CDP (`globalThis.openshowcase` in the service worker): `start` → `stop` (waits for the save) → `exportFile` (with the flow's direction) → `readChunk` (base64). Its shape and `Direction` (`lib/direction.ts`) are mirrored in the recorder's `browser.ts`; change both.
+- Direction: `cueClicks` puts the flow's `label`/`zoom`/`hotspot` on the matching click markers; `RecordingRecord.direction` keeps `cuts` and `zooms`. `buildStepPlan` uses them only when present (hand-made recordings are unchanged): a `hotspot: false` click is activity, not a photo; cuts split clips (jump cuts, and don't count toward the 3s long-gap rule); a zoom splits its clip into wide → zoomed (padded 0.5s) → wide contiguous pieces.
+- A session started that way has `automated: true`, so saving it opens no editor tab.
+- `.osrec` (`lib/recording-file.ts`): `OSREC` + version byte, uint32 LE header length, JSON header (recording meta, markers, optional direction), then the webm. The editor imports it from its empty screen (`ImportScreen`, also reached from the popup's file icon), or on load from a file packaged in the extension (`editor.html?import=imports/<name>.osrec`, `core/import-source.ts`: what the recorder's review browser uses), into IndexedDB under a new id.
+- `MarkerRecord.label` (the flow's `tooltip`) wins over `elementText` for the hotspot's tooltip.
 
 ## Testing patterns
 

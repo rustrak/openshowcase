@@ -46,7 +46,12 @@ export function useRecording(recordingId: string | null): RecordingState {
         return;
       }
       const initialSteps = stepsFromPlan(
-        buildStepPlan(markers, recording.durationSec, recording.startedAt),
+        buildStepPlan(
+          markers,
+          recording.durationSec,
+          recording.startedAt,
+          recording.direction,
+        ),
       );
       if (initialSteps.length === 0) {
         setState({ status: "empty" });

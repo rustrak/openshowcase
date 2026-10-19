@@ -1,5 +1,6 @@
 import {
   ArrowUpRight,
+  FileUp,
   MonitorPlay,
   MousePointerClick,
   Square,
@@ -58,6 +59,11 @@ function App() {
     window.close();
   }
 
+  async function openImport() {
+    await browser.tabs.create({ url: browser.runtime.getURL("/editor.html") });
+    window.close();
+  }
+
   async function openEditor(recordingId: string) {
     await browser.tabs.create({
       url: browser.runtime.getURL(`/editor.html?recordingId=${recordingId}`),
@@ -73,24 +79,17 @@ function App() {
           {session.active ? (
             <ElapsedChip recordingId={session.recordingId} />
           ) : (
-            <Tooltip>
-              <TooltipTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon-sm"
-                    aria-label="Test an exported demo"
-                    className="-mr-2 text-muted-foreground hover:text-foreground [&_svg]:size-4"
-                    onClick={openPlayground}
-                  />
-                }
+            <div className="-mr-2 flex items-center">
+              <HeaderAction label="Import a recording" onClick={openImport}>
+                <FileUp />
+              </HeaderAction>
+              <HeaderAction
+                label="Test an exported demo"
+                onClick={openPlayground}
               >
                 <MonitorPlay />
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                Test an exported demo
-              </TooltipContent>
-            </Tooltip>
+              </HeaderAction>
+            </div>
           )}
         </header>
 
@@ -121,6 +120,35 @@ function App() {
         </footer>
       </div>
     </TooltipProvider>
+  );
+}
+
+function HeaderAction({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            aria-label={label}
+            className="text-muted-foreground hover:text-foreground [&_svg]:size-4"
+            onClick={onClick}
+          />
+        }
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent side="bottom">{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

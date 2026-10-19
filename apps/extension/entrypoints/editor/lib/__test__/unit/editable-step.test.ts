@@ -27,6 +27,14 @@ describe("autoTooltipLabel", () => {
     );
   });
 
+  it("uses the label the recording chose over the element text", () => {
+    expect(
+      autoTooltipLabel(
+        marker({ elementText: "New", label: "Create your first invoice" }),
+      ),
+    ).toBe("Create your first invoice");
+  });
+
   it("falls back to a generic label when there is no element text", () => {
     expect(autoTooltipLabel(marker({ elementText: undefined }))).toBe(
       "Click here",
@@ -58,6 +66,38 @@ describe("stepsFromPlan", () => {
         textColor: "#0C0C0C",
         position: "auto",
       },
+    });
+  });
+
+  it("zooms a photo step on its click when the recording asked for it", () => {
+    const [step] = stepsFromPlan([
+      {
+        kind: "photo",
+        time: 1,
+        marker: marker({ xFrac: 0.5, yFrac: 0.5, zoom: 2 }),
+      },
+    ]);
+    expect(step?.data.kind === "photo" && step.data.panZoom).toEqual({
+      x: 0.5,
+      y: 0.5,
+      scale: 2,
+    });
+  });
+
+  it("frames a clip where the plan asked for it, kept inside the image", () => {
+    const [step] = stepsFromPlan([
+      {
+        kind: "video",
+        startTime: 0,
+        endTime: 2,
+        playbackRate: 1,
+        zoom: { x: 0.99, y: 0.5, scale: 2 },
+      },
+    ]);
+    expect(step?.data.kind === "video" && step.data.panZoom).toEqual({
+      x: 0.75,
+      y: 0.5,
+      scale: 2,
     });
   });
 

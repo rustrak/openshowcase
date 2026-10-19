@@ -6,6 +6,7 @@ import {
 } from "@rustrak/openshowcase-schema";
 import type { MarkerRecord } from "@/lib/db";
 import type { StepPlan } from "@/lib/segments";
+import { defaultPanZoom } from "../core/step-editor";
 
 export interface PhotoData {
   kind: "photo";
@@ -35,6 +36,7 @@ export interface EditableStep {
 export const DEFAULT_HOTSPOT_LABEL = "Click here";
 
 export function autoTooltipLabel(marker: MarkerRecord): string {
+  if (marker.label) return marker.label;
   if (marker.elementText) return `Click “${marker.elementText}”`;
   return DEFAULT_HOTSPOT_LABEL;
 }
@@ -57,12 +59,14 @@ export function stepsFromPlan(plan: StepPlan[]): EditableStep[] {
               ...defaultHotspotStyle,
             }
           : undefined;
+      const { zoom } = item.marker;
       return {
         id: newStepId(),
         data: {
           kind: "photo",
           sourceTime: item.time,
           hotspot,
+          ...(zoom && { panZoom: defaultPanZoom(hotspot, zoom) }),
         } satisfies PhotoData,
       };
     }
@@ -73,6 +77,9 @@ export function stepsFromPlan(plan: StepPlan[]): EditableStep[] {
         trimStart: item.startTime,
         trimEnd: item.endTime,
         playbackRate: item.playbackRate,
+        ...(item.zoom && {
+          panZoom: defaultPanZoom(item.zoom, item.zoom.scale),
+        }),
       } satisfies VideoData,
     };
   });
