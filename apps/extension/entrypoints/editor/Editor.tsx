@@ -9,8 +9,10 @@ import {
 } from "@rustrak/openshowcase-schema";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { browser } from "wxt/browser";
 import type { useColorScheme } from "@/hooks/use-color-scheme";
 import type { RecordingRecord } from "@/lib/db";
+import { playgroundQuery } from "../playground/core/playground-url";
 import { ExportDialog } from "./components/ExportDialog";
 import { Inspector, type InspectorTab } from "./components/inspector/Inspector";
 import type { StepInspectorProps } from "./components/inspector/StepInspector";
@@ -311,6 +313,18 @@ export function Editor({
     return total;
   }, [previewDemo, prepareVideo, encodePhotos]);
 
+  /** The last download, kept for the playground (its blob: URL lives as long as this tab). */
+  const lastExport = useRef<{ url: string; file: string }>(undefined);
+
+  function openPlayground() {
+    if (!lastExport.current) return;
+    void browser.tabs.create({
+      url: browser.runtime.getURL(
+        `/playground.html${playgroundQuery({ url: lastExport.current.url, name: lastExport.current.file })}`,
+      ),
+    });
+  }
+
   async function exportBundle(format: ExportFormat): Promise<string> {
     if (!previewDemo) throw new Error("Frames are still being extracted");
     const [{ demo, videoBlob }, imageBlobs] = await Promise.all([
@@ -319,6 +333,8 @@ export function Editor({
     ]);
     const blob = await buildDemoBundle({ demo, videoBlob, imageBlobs });
     const file = exportFileName(title, format);
+    if (lastExport.current) URL.revokeObjectURL(lastExport.current.url);
+    lastExport.current = { url: URL.createObjectURL(blob), file };
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -502,6 +518,7 @@ export function Editor({
         clipCount={steps.filter((s) => s.data.kind === "video").length}
         estimate={estimateSize}
         onExport={exportBundle}
+        onOpenPlayground={openPlayground}
       />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>

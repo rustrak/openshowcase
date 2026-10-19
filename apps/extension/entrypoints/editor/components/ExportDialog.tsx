@@ -4,6 +4,7 @@ import {
   Download,
   LoaderCircle,
   PackageCheck,
+  Play,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -27,6 +28,8 @@ interface ExportDialogProps {
   estimate: () => Promise<number>;
   /** Builds and downloads the bundle; resolves to the downloaded file name. */
   onExport: (format: ExportFormat) => Promise<string>;
+  /** Opens the bundle just downloaded in the playground. */
+  onOpenPlayground: () => void;
 }
 
 type Phase =
@@ -41,6 +44,7 @@ export function ExportDialog({
   clipCount,
   estimate,
   onExport,
+  onOpenPlayground,
 }: ExportDialogProps) {
   const [bytes, setBytes] = useState<number | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -113,6 +117,13 @@ export function ExportDialog({
               </span>
             </div>
             <CodeBlock code={embedSnippet(phase.file, phase.format)} />
+            <Button
+              variant="outline"
+              onClick={onOpenPlayground}
+              className="gap-1.5 self-start"
+            >
+              <Play className="size-3.5" /> Test it in the playground
+            </Button>
           </div>
         ) : null}
 

@@ -44,6 +44,8 @@ loaded.dispose(); // stops the download and frees the bundle's asset URLs
 | `resolveAsset` | `(src) => string \| Promise<string>` | Serves asset URLs instead of `assetBaseUrl` (pass `loadDemo()`'s for a bundle). |
 | `onStepChange` | `(index, step) => void` | Called on every step change. |
 
+`readStoredZip(stream)` yields a bundle's files as they arrive, for tools that inspect a bundle.
+
 `loadDemo(src, { assetBaseUrl?, signal? })` fetches a demo and tells a bundle from a `steps.json` by its first bytes. It resolves as soon as the demo is known; a bundle's assets keep downloading in the one request, each served as soon as it arrives.
 
 Methods: `mount()`, `destroy()`, `next()`, `prev()`, `goTo(index)`. Getters: `currentIndex`, `currentStep`.

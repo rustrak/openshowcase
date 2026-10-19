@@ -14,5 +14,7 @@ export {
   type LoadedDemo,
   loadDemo,
 } from "./core/load-demo";
+// The single-file bundle reader, for tools that inspect a bundle (e.g. the extension's playground)
+export { readStoredZip, type ZipEntry } from "./core/stored-zip";
 export type { PlayerOptions } from "./mount";
 export { Player } from "./mount";

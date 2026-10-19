@@ -44,6 +44,11 @@ WXT + React Chrome extension (MV3) with two jobs: **capture** (continuous tab vi
 - The recording is a master: record at high quality (`offscreen/lib/recording-settings.ts`) and optimize at export. Photo steps come from the video, never from separate screenshots, because the editor converts steps between photo and video.
 - Manual testing without recording: serve `.output/chrome-mv3` over http, seed the `openshowcase` IndexedDB with a canvas-generated webm + markers, and open `editor.html?recordingId=…`. Chrome defers media in hidden tabs, so background screenshots show empty video.
 
+## Playground
+
+- `entrypoints/playground/`: plays an exported `.openshowcase`/`.zip` with the real player, loaded from the file like a site loads it, as large as the stage fits and on a light/dark site background. Opened from the export dialog ("Test it in the playground", which hands over the download's blob: URL, alive while the editor tab is) and from the popup header's icon. Not named `sandbox`: WXT reserves that name for manifest sandbox pages.
+- `core/inspect-bundle.ts` reads the file with player-core's `readStoredZip`, so a file it accepts is one the player loads, and a rejected one gets the player's reason.
+
 ## UI
 
 - Colors, surfaces, type scale and motion come from tokens in `assets/theme.css`. Never hardcode colors in editor/popup chrome. Exceptions (demo content, not UI): `lib/player-appearance.ts` and the hotspot presets in `ColorField`.
