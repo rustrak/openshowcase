@@ -51,8 +51,9 @@ export function extractFrame(
       canvas.toBlob(
         (blob) =>
           blob ? resolve(blob) : reject(new Error("Could not extract frame")),
-        "image/webp",
-        0.9,
+        // Lossless: the frame is already a lossy decode of the recording, and export
+        // encodes it once more (lib/export-images.ts). A lossy frame here would be a third pass.
+        "image/png",
       );
     };
 

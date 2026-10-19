@@ -71,6 +71,22 @@ it("bundles a photo-only demo with the image rewritten to assets/step-1.webp", a
   ]);
 });
 
+it("keeps an image already encoded as AVIF and names it after its type", async () => {
+  const avif = new Blob(["fake-avif-bytes"], { type: "image/avif" });
+  const bundle = await buildDemoBundle({
+    demo: baseDemo({ steps: [photoStep()] }),
+    imageBlobs: new Map([["step-1", avif]]),
+  });
+
+  const zip = await JSZip.loadAsync(bundle);
+  expect(await zip.file("assets/step-1.avif")?.async("string")).toBe(
+    "fake-avif-bytes",
+  );
+  expect((await readStepsJson(zip)).steps[0]).toMatchObject({
+    image: { src: "assets/step-1.avif" },
+  });
+});
+
 it("clears the video field when no videoBlob is provided, even if the demo had one", async () => {
   const demo = baseDemo({
     video: { src: "original.webm", width: 1280, height: 720, durationSec: 10 },

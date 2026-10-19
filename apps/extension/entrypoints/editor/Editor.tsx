@@ -1,4 +1,4 @@
-import { blobToWebp, buildDemoBundle } from "@rustrak/openshowcase-exporter";
+import { buildDemoBundle } from "@rustrak/openshowcase-exporter";
 import {
   type Demo,
   defaultHotspotStyle,
@@ -21,6 +21,7 @@ import { Stage } from "./components/stage/Stage";
 import { type StageTool, StageToolbar } from "./components/stage/StageToolbar";
 import { type EditorMode, TopBar } from "./components/TopBar";
 import { type ExportFormat, exportFileName } from "./core/export-format";
+import { photoEncoding } from "./core/photo-encoding";
 import { MIN_CLIP_SEC } from "./core/sequence-layout";
 import * as StepEditor from "./core/step-editor";
 import { useClipPlayback } from "./hooks/use-clip-playback";
@@ -36,6 +37,7 @@ import {
   toSchemaStep,
   type VideoData,
 } from "./lib/editable-step";
+import { encodePhoto } from "./lib/export-images";
 
 interface EditorProps {
   recordingId: string;
@@ -283,24 +285,38 @@ export function Editor({
 
   const prepareVideo = useVideoExport(recording.videoBlob);
 
+  /** Each photo step's frame, encoded for export (cached, so it runs once per frame). */
+  const encodePhotos = useCallback(async () => {
+    const encoded = new Map<string, Blob>();
+    await Promise.all(
+      steps.map(async ({ id, data }) => {
+        if (data.kind !== "photo" || !data.imageBlob) return;
+        encoded.set(
+          id,
+          await encodePhoto(data.imageBlob, photoEncoding(data.panZoom)),
+        );
+      }),
+    );
+    return encoded;
+  }, [steps]);
+
   const estimateSize = useCallback(async () => {
     if (!previewDemo) return 0;
-    let total = (await prepareVideo(previewDemo)).videoBlob?.size ?? 0;
-    for (const step of steps) {
-      if (step.data.kind !== "photo" || !step.data.imageBlob) continue;
-      total += (await blobToWebp(step.data.imageBlob)).size;
-    }
+    const [video, photos] = await Promise.all([
+      prepareVideo(previewDemo),
+      encodePhotos(),
+    ]);
+    let total = video.videoBlob?.size ?? 0;
+    for (const photo of photos.values()) total += photo.size;
     return total;
-  }, [steps, previewDemo, prepareVideo]);
+  }, [previewDemo, prepareVideo, encodePhotos]);
 
   async function exportBundle(format: ExportFormat): Promise<string> {
     if (!previewDemo) throw new Error("Frames are still being extracted");
-    const imageBlobs = new Map<string, Blob>();
-    for (const step of steps) {
-      if (step.data.kind === "photo" && step.data.imageBlob)
-        imageBlobs.set(step.id, step.data.imageBlob);
-    }
-    const { demo, videoBlob } = await prepareVideo(previewDemo);
+    const [{ demo, videoBlob }, imageBlobs] = await Promise.all([
+      prepareVideo(previewDemo),
+      encodePhotos(),
+    ]);
     const blob = await buildDemoBundle({ demo, videoBlob, imageBlobs });
     const file = exportFileName(title, format);
     const url = URL.createObjectURL(blob);

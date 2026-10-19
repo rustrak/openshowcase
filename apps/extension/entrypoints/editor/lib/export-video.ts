@@ -1,5 +1,11 @@
-import type { InputVideoTrack, Quality, VideoCodec } from "mediabunny";
+import type {
+  InputVideoTrack,
+  Quality,
+  VideoCodec,
+  VideoSample,
+} from "mediabunny";
 import type { ClipSegment } from "../core/video-clips";
+import { lastFrameDuration, videoBitrate } from "../core/video-encoding";
 
 type Mediabunny = typeof import("mediabunny");
 
@@ -7,41 +13,19 @@ interface EncoderChoice {
   codec: Extract<VideoCodec, "avc" | "vp9">;
   container: "mp4" | "webm";
   hardwareAcceleration: "prefer-hardware" | "prefer-software";
-  /** Quantizers (lower = better), or undefined for bitrate-based rate control. */
-  quantizer?: { base: number; zoomed: number };
 }
 
 /**
- * Tried in order. H.264 in MP4 is the only format every browser plays (VP9 needs iOS 17.4+).
- * Measured on a 3000×1790@60 UI recording (VMAF against the recording, ~97 is its ceiling):
- * - hardware H.264 (VideoToolbox on macOS) is the only H.264 encoder with quantizer rate
- *   control: QP 22 → VMAF 96.3 at ~1/4 of the recording's bitrate, QP 18 → 96.7 for +22% size.
- *   Zoomed ranges get the finer one because the player enlarges them.
- * - software H.264 (OpenH264) only does bitrate control: 8 Mbps → VMAF 95.1, same size.
- * - software VP9 (always available) at QP 30 → VMAF 96.7, but ~30% bigger than H.264.
+ * Tried in order, all with bitrate rate control (see `core/video-encoding.ts`). H.264 in MP4
+ * is the only format every browser plays (VP9 needs iOS 17.4+). Software first: Chrome's
+ * OpenH264 honors `contentHint: "text"` (screen-content mode) and, on a scrolling text page,
+ * came out 3x smaller than macOS's hardware encoder at the same quality.
  */
 const ENCODER_CHOICES: EncoderChoice[] = [
-  {
-    codec: "avc",
-    container: "mp4",
-    hardwareAcceleration: "prefer-hardware",
-    quantizer: { base: 22, zoomed: 18 },
-  },
   { codec: "avc", container: "mp4", hardwareAcceleration: "prefer-software" },
-  {
-    codec: "vp9",
-    container: "webm",
-    hardwareAcceleration: "prefer-software",
-    quantizer: { base: 30, zoomed: 26 },
-  },
+  { codec: "avc", container: "mp4", hardwareAcceleration: "prefer-hardware" },
+  { codec: "vp9", container: "webm", hardwareAcceleration: "prefer-software" },
 ];
-
-/**
- * Bitrate for choices without a quantizer: ~0.05 bits per pixel per frame at 30fps (8 Mbps at
- * 3000×1790). Static UI stretches cost far less, so it's a ceiling for motion, not an average.
- */
-const bitsPerSecond = (width: number, height: number) =>
-  Math.round(Math.min(width * height * 30 * 0.05, 12_000_000));
 
 /**
  * Re-encodes the recording into a video holding only `segments`, each placed at its
@@ -64,10 +48,14 @@ export async function encodeVideoClips(
     const width = track.displayWidth & ~1;
     const height = track.displayHeight & ~1;
 
+    const quality = new mb.Quality({
+      bitrate: videoBitrate({
+        width,
+        height,
+        zoomed: segments.some((segment) => segment.zoomed),
+      }),
+    });
     for (const choice of ENCODER_CHOICES) {
-      const quality = choice.quantizer
-        ? new mb.Quality({ quantizer: choice.quantizer.base })
-        : new mb.Quality({ bitrate: bitsPerSecond(width, height) });
       const supported = await mb.canEncodeVideo(choice.codec, {
         width,
         height,
@@ -128,32 +116,44 @@ async function encodeWith(
   const sink = new mb.VideoSampleSink(track);
   try {
     for (const segment of segments) {
-      const quantizer = choice.quantizer
-        ? segment.zoomed
-          ? choice.quantizer.zoomed
-          : choice.quantizer.base
-        : undefined;
+      const end = segment.outStart + segment.end - segment.start;
+      // Held back one frame, to know which one is the segment's last
+      let held: VideoSample | undefined;
       let first = true;
-      for await (const sample of sink.samples(segment.start, segment.end)) {
+      const add = async (sample: VideoSample) => {
         try {
-          // The first sample may have started before the range (it's the frame on screen at
-          // `start`): pin it to the segment start.
+          // Only force it: an explicit `false` would also cancel the periodic key frames
+          await source.add(sample, first ? { keyFrame: true } : undefined);
+        } finally {
+          sample.close();
+        }
+        first = false;
+      };
+      try {
+        for await (const sample of sink.samples(segment.start, segment.end)) {
+          // The first sample may have started before the range (it's the frame on screen
+          // at `start`): pin it to the segment start.
           sample.setTimestamp(
             Math.max(sample.timestamp, segment.start) -
               segment.start +
               segment.outStart,
           );
-          await source.add(sample, {
-            // Only force it: an explicit `false` would also cancel the periodic key frames
-            ...(first && { keyFrame: true }),
-            ...(quantizer !== undefined && {
-              [choice.codec]: { quantizer },
-            }),
-          });
-        } finally {
-          sample.close();
+          if (held) await add(held);
+          held = sample;
         }
-        first = false;
+      } catch (error) {
+        held?.close();
+        throw error;
+      }
+      if (held) {
+        held.setDuration(
+          lastFrameDuration({
+            timestamp: held.timestamp,
+            duration: held.duration,
+            end,
+          }),
+        );
+        await add(held);
       }
     }
     await output.finalize();

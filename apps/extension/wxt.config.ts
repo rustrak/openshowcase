@@ -12,6 +12,12 @@ export default defineConfig({
     description: "Interactive demo recorder — open source",
     permissions: ["storage", "tabs", "tabCapture", "offscreen"],
     host_permissions: ["<all_urls>"],
+    // MV3's default CSP forbids compiling WebAssembly; the export's AVIF encoder
+    // (editor/lib/avif.worker.ts) is wasm. 'wasm-unsafe-eval' allows only that, not eval().
+    content_security_policy: {
+      extension_pages:
+        "script-src 'self' 'wasm-unsafe-eval'; object-src 'self';",
+    },
   },
   // Attached to every GitHub release (see .github/workflows/release.yml).
   zip: {

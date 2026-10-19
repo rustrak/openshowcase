@@ -11,7 +11,7 @@ export interface BuildDemoBundleOptions {
    * the demo has video steps.
    */
   videoBlob?: Blob;
-  /** Frame of each photo step, keyed by step id. */
+  /** Frame of each photo step, keyed by step id: AVIF ships as is, anything else as WebP. */
   imageBlobs: Map<string, Blob>;
   /** WebP quality (0-1) of the photo frames. @default 0.85 */
   imageQuality?: number;
@@ -58,8 +58,13 @@ export async function buildDemoBundle({
     const source = imageBlobs.get(step.id);
     if (!source)
       throw new Error(`Missing image blob for photo step ${step.id}`);
-    const path = `assets/step-${photoIndex}.webp`;
-    assets.push([path, await blobToWebp(source, imageQuality)]);
+    // Frames the caller already encoded as AVIF ship as is; anything else becomes WebP
+    const image =
+      source.type === "image/avif"
+        ? source
+        : await blobToWebp(source, imageQuality);
+    const path = `assets/step-${photoIndex}.${image.type === "image/avif" ? "avif" : "webp"}`;
+    assets.push([path, image]);
     steps.push({ ...step, image: { ...step.image, src: path } });
   }
 

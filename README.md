@@ -33,7 +33,7 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
    clicks, scrolls and typing.
 2. **Edit.** Each click becomes a photo step with a hotspot, and activity between
    clicks becomes a video clip. Write tooltips, trim clips, zoom and reorder.
-3. **Export.** You get one `.openshowcase` file with the steps, WebP frames and
+3. **Export.** You get one `.openshowcase` file with the steps, AVIF frames and
    only the parts of the recording the demo plays, re-encoded (or the same thing as
    a `.zip`).
 
