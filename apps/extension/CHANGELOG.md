@@ -1,5 +1,19 @@
 # @rustrak/openshowcase-extension
 
+## 0.4.0
+
+### Minor Changes
+
+- [#15](https://github.com/rustrak/openshowcase/pull/15) [`9ab55d6`](https://github.com/rustrak/openshowcase/commit/9ab55d6e5d5329db3f1e65774ae06b44570cbe43) Thanks [@AbianS](https://github.com/AbianS)! - A recorder flow can name its demo with `title`: the `.osrec` carries it and the editor opens the demo with that title (shown in the player's browser bar and used for the export's file name). The skill tells the agent to pick a short, descriptive one.
+
+### Patch Changes
+
+- Updated dependencies [[`f63bf1e`](https://github.com/rustrak/openshowcase/commit/f63bf1ee0f7b7e6f59d890b4ea219e41da755dbf), [`f63bf1e`](https://github.com/rustrak/openshowcase/commit/f63bf1ee0f7b7e6f59d890b4ea219e41da755dbf), [`e1c0590`](https://github.com/rustrak/openshowcase/commit/e1c05909d2984d97a885b8e38741dc9222f83de0), [`ebbce8c`](https://github.com/rustrak/openshowcase/commit/ebbce8c3484e6481564d13f09258ca3e1b771d06)]:
+  - @rustrak/openshowcase-player-core@0.4.0
+  - @rustrak/openshowcase-player-react@0.4.0
+  - @rustrak/openshowcase-exporter@0.4.0
+  - @rustrak/openshowcase-schema@0.4.0
+
 ## 0.3.0
 
 ### Minor Changes
