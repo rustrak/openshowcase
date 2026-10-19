@@ -35,6 +35,8 @@ In SSR frameworks (Next.js App Router, etc.) render it from a client component (
 | `assetBaseUrl` | `string` | Overrides the asset base URL inferred from `src`. |
 | `aspectRatio` | `number` | Width/height ratio used while the container has no explicit height. Defaults to `16 / 9`. |
 | `className` / `style` | | Applied to the container. |
+| `appearance` | `"light" \| "dark" \| "auto"` | Overrides the demo's light/dark appearance (browser frame, background, controls), e.g. to follow your site's mode; `"auto"` follows the viewer's `prefers-color-scheme`. Changes apply live, without restarting the demo. |
+| `hotspotStyle` | `{ bgColor?: string; textColor?: string }` | Overrides every step's hotspot/tooltip colors, e.g. to force your brand color whatever the demo was recorded with. Changes apply live. |
 | `onStepChange` | `(index: number, step: Step) => void` | Called on every step change. |
 
 ## License

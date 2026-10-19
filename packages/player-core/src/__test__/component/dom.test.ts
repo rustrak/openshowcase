@@ -245,6 +245,29 @@ describe("each", () => {
     expect(lis[2]).toBe(first);
   });
 
+  it("leaves views already in place in the DOM when items update", async () => {
+    const items = signal([1, 2, 3]);
+    const host = h(
+      "ul",
+      null,
+      each(
+        () => items(),
+        (_, index) => index,
+        (n) => h("li", null, () => n()),
+      ),
+    );
+    const moves: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => moves.push(...records));
+    observer.observe(host, { childList: true });
+
+    items([4, 5, 6]);
+    await Promise.resolve();
+    observer.disconnect();
+
+    expect(host.textContent).toBe("456");
+    expect(moves).toEqual([]);
+  });
+
   it("removes views whose key is gone and stops their bindings", () => {
     const label = signal("x");
     const items = signal([1, 2]);

@@ -2,6 +2,7 @@ import type {
   Demo,
   PhotoStep,
   Step,
+  ThemeAppearance,
   VideoStep,
 } from "@rustrak/openshowcase-schema";
 import { loadVideoSrc, resolveAssetUrl } from "../../core/asset-loader";
@@ -19,6 +20,7 @@ import {
   ZOOM_ANIMATION_DELAY_MS,
 } from "../../core/media-zoom";
 import {
+  type HotspotStyle,
   type PhotoHotspotVisual,
   PhotoOverlayController,
   type PhotoTooltipVisual,
@@ -42,12 +44,19 @@ import { css } from "./Player.styles";
 // bundled by the host app (the only side-effect import in the package: see `sideEffects`).
 import "../../app.css";
 
+/** The demo's own appearance, or `"auto"`: follow the viewer's `prefers-color-scheme`, live. */
+export type PlayerAppearance = ThemeAppearance | "auto";
+
 export interface PlayerViewOptions {
   demo: Demo;
   /** Prefix prepended to relative asset src (image/video), e.g. the bundle's base URL. */
   assetBaseUrl?: string;
   /** Serves asset URLs instead of `assetBaseUrl`, e.g. from a single-file bundle. */
   resolveAsset?: AssetResolver;
+  /** Overrides every step's hotspot/tooltip colors, whatever they were recorded with. */
+  hotspotStyle?: HotspotStyle;
+  /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode. */
+  appearance?: PlayerAppearance;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -60,6 +69,10 @@ export interface PlayerView {
   next(): void;
   prev(): void;
   goTo(index: number): void;
+  /** Live: no remount, the current step keeps playing. `undefined` goes back to the demo's. */
+  setAppearance(appearance: PlayerAppearance | undefined): void;
+  /** Live: the hotspot/tooltip on screen recolors at once. */
+  setHotspotStyle(style: HotspotStyle | undefined): void;
   currentIndex(): number;
   currentStep(): Step | undefined;
 }
@@ -101,6 +114,8 @@ export function createPlayerView({
   demo,
   assetBaseUrl,
   resolveAsset = (src) => resolveAssetUrl(src, assetBaseUrl),
+  hotspotStyle,
+  appearance: appearanceOverride,
   onStepChange,
 }: PlayerViewOptions): PlayerView {
   injectStyles(document, "player", css);
@@ -110,6 +125,16 @@ export function createPlayerView({
   const naturalHeight = demo.video?.height ?? firstPhoto?.image.height ?? 0;
 
   let index = 0;
+  const appearance = signal(appearanceOverride);
+  // Only read when the appearance is "auto"; the listener lives from start() to stop()
+  const darkQuery = matchMedia("(prefers-color-scheme: dark)");
+  const systemDark = signal(darkQuery.matches);
+  const onSchemeChange = (event: MediaQueryListEvent) =>
+    systemDark(event.matches);
+  const isDark = () => {
+    const value = appearance() ?? demo.theme.appearance;
+    return value === "auto" ? systemDark() : value === "dark";
+  };
   const stageSize = signal({ width: 0, height: 0 });
 
   const photo = {
@@ -132,18 +157,21 @@ export function createPlayerView({
   let currentStepRef: Step | undefined;
   let previousStepRef: Step | undefined;
 
-  const overlay = new PhotoOverlayController({
-    setHotspot: (hotspot) => photo.hotspot(hotspot),
-    setTooltip: (tooltip) => photo.tooltip(tooltip),
-    showTooltip: () => {
-      const tooltip = photo.tooltip();
-      if (tooltip) photo.tooltip({ ...tooltip, visible: true });
+  const overlay = new PhotoOverlayController(
+    {
+      setHotspot: (hotspot) => photo.hotspot(hotspot),
+      setTooltip: (tooltip) => photo.tooltip(tooltip),
+      showTooltip: () => {
+        const tooltip = photo.tooltip();
+        if (tooltip) photo.tooltip({ ...tooltip, visible: true });
+      },
+      hideTooltip: () => {
+        const tooltip = photo.tooltip();
+        if (tooltip) photo.tooltip({ ...tooltip, visible: false });
+      },
     },
-    hideTooltip: () => {
-      const tooltip = photo.tooltip();
-      if (tooltip) photo.tooltip({ ...tooltip, visible: false });
-    },
-  });
+    hotspotStyle,
+  );
 
   const stepMachine = new StepMachine(demo.steps.length, demo.theme.autoplay, {
     onChange: (newIndex) => renderStep(newIndex, index),
@@ -484,10 +512,11 @@ export function createPlayerView({
   const element = h(
     "div",
     {
-      class: cx(
-        "openshowcase-player relative block overflow-hidden leading-[1.45] select-none",
-        demo.theme.appearance === "dark" && "openshowcase-player--dark",
-      ),
+      class: () =>
+        cx(
+          "openshowcase-player relative block overflow-hidden leading-[1.45] select-none",
+          isDark() && "openshowcase-player--dark",
+        ),
       role: "application",
       tabindex: "0",
       onkeydown: (event: KeyboardEvent) => {
@@ -521,6 +550,7 @@ export function createPlayerView({
       renderStep(0, -1);
       resizeObserver = new ResizeObserver(() => layoutOverlay());
       resizeObserver.observe(element);
+      darkQuery.addEventListener("change", onSchemeChange);
     },
     stop() {
       videoEl.pause();
@@ -528,11 +558,27 @@ export function createPlayerView({
       overlay.dispose();
       if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
       resizeObserver?.disconnect();
+      darkQuery.removeEventListener("change", onSchemeChange);
       clearTimeout(navTimer);
     },
     next,
     prev,
     goTo,
+    setAppearance(value) {
+      appearance(value);
+    },
+    setHotspotStyle(style) {
+      overlay.setStyle(style);
+      const step = currentStepRef;
+      if (!step || !isPhotoStep(step) || !step.hotspot) return;
+      const { bgColor, textColor } = overlay.colors(step.hotspot);
+      batch(() => {
+        const hotspot = photo.hotspot();
+        if (hotspot) photo.hotspot({ ...hotspot, color: bgColor });
+        const tooltip = photo.tooltip();
+        if (tooltip) photo.tooltip({ ...tooltip, bgColor, textColor });
+      });
+    },
     currentIndex: () => index,
     currentStep: () => demo.steps[index],
   };

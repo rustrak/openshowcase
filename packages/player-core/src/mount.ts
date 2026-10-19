@@ -1,7 +1,12 @@
 import type { Demo, Step } from "@rustrak/openshowcase-schema";
 import type { AssetResolver } from "./core/load-demo";
+import type { HotspotStyle } from "./core/photo-overlay";
 import { mount as mountView } from "./dom/h";
-import { createPlayerView, type PlayerView } from "./ui/Player/Player";
+import {
+  createPlayerView,
+  type PlayerAppearance,
+  type PlayerView,
+} from "./ui/Player/Player";
 
 export interface PlayerOptions {
   container: HTMLElement;
@@ -10,6 +15,11 @@ export interface PlayerOptions {
   assetBaseUrl?: string;
   /** Serves asset URLs instead of `assetBaseUrl`: pass `loadDemo()`'s for a bundle. */
   resolveAsset?: AssetResolver;
+  /** Overrides every step's hotspot/tooltip colors, whatever they were recorded with. */
+  hotspotStyle?: HotspotStyle;
+  /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode, or
+   * `"auto"` to follow the viewer's `prefers-color-scheme`. */
+  appearance?: PlayerAppearance;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -23,18 +33,28 @@ export class Player {
   private unmount: (() => void) | undefined;
 
   constructor(options: PlayerOptions) {
-    this.options = options;
+    // a copy: the setters below update it, and it's the caller's object
+    this.options = { ...options };
   }
 
   mount(): void {
-    const { container, demo, assetBaseUrl, resolveAsset, onStepChange } =
-      this.options;
+    const {
+      container,
+      demo,
+      assetBaseUrl,
+      resolveAsset,
+      hotspotStyle,
+      appearance,
+      onStepChange,
+    } = this.options;
     let view!: PlayerView;
     this.unmount = mountView(() => {
       view = createPlayerView({
         demo,
         assetBaseUrl,
         resolveAsset,
+        hotspotStyle,
+        appearance,
         onStepChange,
       });
       return view.element;
@@ -60,6 +80,18 @@ export class Player {
 
   goTo(index: number): void {
     this.view?.goTo(index);
+  }
+
+  /** Switches light/dark without remounting (`undefined`: back to the demo's own). */
+  setAppearance(appearance: PlayerAppearance | undefined): void {
+    this.options.appearance = appearance;
+    this.view?.setAppearance(appearance);
+  }
+
+  /** Swaps the hotspot/tooltip color override without remounting. */
+  setHotspotStyle(style: HotspotStyle | undefined): void {
+    this.options.hotspotStyle = style;
+    this.view?.setHotspotStyle(style);
   }
 
   get currentIndex(): number {

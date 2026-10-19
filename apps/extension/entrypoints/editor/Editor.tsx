@@ -62,7 +62,8 @@ export function Editor({
 }: EditorProps) {
   const { doc, commit, patchAll, undo, redo, canUndo, canRedo } =
     useEditorDocument({
-      title: "Untitled demo",
+      // a recorder CLI flow names its demo
+      title: recording.direction?.title ?? "Untitled demo",
       theme: defaultTheme,
       steps: initialSteps,
     });

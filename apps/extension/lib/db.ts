@@ -29,6 +29,8 @@ export interface RecordingDirection {
   cuts: TimeRange[];
   /** Clips that play an action the flow zoomed into frame on it. */
   zooms: (TimeRange & { x: number; y: number; scale: number })[];
+  /** The flow's name for the demo: the editor's starting title. */
+  title?: string;
 }
 
 export type MarkerKind = "click" | "scroll" | "type" | "drag";

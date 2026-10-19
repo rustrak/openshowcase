@@ -22,6 +22,8 @@ export interface Direction {
   cuts: TimeRange[];
   /** Actions to frame the clip on (centers as fractions of the page). */
   zooms: (TimeRange & { x: number; y: number; scale: number })[];
+  /** The flow's `title`: the demo's name in the editor. */
+  title?: string;
 }
 
 /** The extension's automation API (apps/extension/lib/automation.ts). Keep in sync. */

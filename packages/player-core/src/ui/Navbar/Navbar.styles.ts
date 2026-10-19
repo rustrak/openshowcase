@@ -14,15 +14,20 @@ export const css = `
   opacity: 0;
   translate: 0 4px;
   pointer-events: none;
+  /* leaving: unhurried, so it fades rather than blinks out */
   transition:
-    opacity 220ms var(--wd-ease-out, ease-out),
-    translate 220ms var(--wd-ease-out, ease-out);
+    opacity 360ms cubic-bezier(0.4, 0, 0.2, 1),
+    translate 360ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .openshowcase-player .navbar--visible,
 .openshowcase-player .navbar:focus-within {
   opacity: 1;
   translate: 0 0;
   pointer-events: auto;
+  /* arriving: quick, it answers the pointer */
+  transition:
+    opacity 180ms var(--wd-ease-out, ease-out),
+    translate 180ms var(--wd-ease-out, ease-out);
 }
 
 .openshowcase-player .nav-btn {
@@ -70,35 +75,48 @@ export const css = `
   gap: calc(var(--wd-u, 14px) * 0.3);
   min-width: 0;
 }
+/* Many steps: one continuous scrubber split by hairlines, like video chapters. */
+.openshowcase-player .segments--dense {
+  gap: 2px;
+}
 
-/* A tall invisible hit row around a thin bar that thickens on hover. */
+/* Every segment keeps the same width (the active one never grows, so nothing reflows when
+   the step changes): a tall invisible hit row around a bar that thickens on hover. */
 .openshowcase-player .segment {
+  position: relative;
   flex: 1 1 0;
-  min-width: 6px;
-  height: calc(var(--wd-u, 14px) * 1.5);
+  min-width: 2px;
+  height: calc(var(--wd-u, 14px) * 2);
   display: flex;
   align-items: center;
   padding: 0;
   border: 0;
   background: none;
   cursor: pointer;
-  transition: flex-grow 260ms cubic-bezier(0.6, 0.6, 0, 1);
-}
-.openshowcase-player .segment--active {
-  flex-grow: 3;
 }
 .openshowcase-player .segment-track {
   position: relative;
   width: 100%;
-  height: 4px;
+  height: 5px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgb(255 255 255 / 0.32);
-  transition: height 200ms cubic-bezier(0.6, 0.6, 0, 1);
+  background: rgb(255 255 255 / 0.28);
+  transition:
+    height 180ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 180ms ease;
 }
-.openshowcase-player .segment:hover .segment-track,
+.openshowcase-player .segments--dense .segment-track {
+  border-radius: 1px;
+}
+/* The current step stands out as a whole, not just its filled part (in a dense scrubber a
+   few pixels of fill alone would be lost). */
 .openshowcase-player .segment--active .segment-track {
-  height: 6px;
+  height: 7px;
+  background: rgb(255 255 255 / 0.5);
+}
+.openshowcase-player .segment:hover .segment-track {
+  height: 9px;
+  background: rgb(255 255 255 / 0.42);
 }
 .openshowcase-player .segment:focus-visible {
   outline: 2px solid #fff;
@@ -111,9 +129,46 @@ export const css = `
   width: 0%;
   border-radius: inherit;
   background: #fff;
+  /* fills and empties on a step change instead of snapping */
+  transition:
+    width 260ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 200ms ease;
+}
+/* The playing clip's fill is updated every frame: a short linear glide just smooths it. */
+.openshowcase-player .segment--active .segment-fill {
+  transition:
+    width 120ms linear,
+    background-color 200ms ease;
 }
 .openshowcase-player .segment-fill--done {
-  background: rgb(255 255 255 / 0.85);
+  background: rgb(255 255 255 / 0.8);
+}
+
+/* Which step a segment is, shown above it on hover. */
+.openshowcase-player .segment::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  translate: -50% 4px;
+  padding: calc(var(--wd-u, 14px) * 0.2) calc(var(--wd-u, 14px) * 0.45);
+  border-radius: 6px;
+  background: rgb(9 9 11 / 0.85);
+  color: #fff;
+  font-size: calc(var(--wd-u, 14px) * 0.7);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 140ms ease,
+    translate 140ms var(--wd-ease-out, ease-out);
+}
+.openshowcase-player .segment:hover::after {
+  opacity: 1;
+  translate: -50% 0;
 }
 
 .openshowcase-player .counter {
@@ -131,6 +186,14 @@ export const css = `
 @media (prefers-reduced-motion: reduce) {
   .openshowcase-player .navbar {
     translate: 0 0;
+  }
+  .openshowcase-player .segment-track,
+  .openshowcase-player .segment-fill,
+  .openshowcase-player .segment::after {
+    transition: none;
+  }
+  .openshowcase-player .segment::after {
+    translate: -50% 0;
   }
 }
 `;
