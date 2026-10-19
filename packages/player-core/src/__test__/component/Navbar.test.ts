@@ -37,6 +37,16 @@ describe("Navbar", () => {
     expect(buttons[0]!.classList.contains("segment--active")).toBe(false);
   });
 
+  it("joins many segments into one dense scrubber", async () => {
+    const few = await render({ segments: segments() });
+    expect(few.container.querySelector(".segments--dense")).toBeNull();
+
+    const many = await render({
+      segments: Array.from({ length: 12 }, () => segments()[2]!),
+    });
+    expect(many.container.querySelector(".segments--dense")).not.toBeNull();
+  });
+
   it("calls onSeek with the clicked segment index", async () => {
     const onSeek = vi.fn();
     const screen = await render({
@@ -45,7 +55,7 @@ describe("Navbar", () => {
       onSeek,
     });
 
-    await screen.getByTitle("Go to step 3").click();
+    await screen.getByRole("button", { name: "Go to step 3" }).click();
 
     expect(onSeek).toHaveBeenCalledWith(2);
   });

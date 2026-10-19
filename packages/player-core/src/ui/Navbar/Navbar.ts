@@ -22,6 +22,9 @@ export interface NavbarProps {
   onSeek?: (index: number) => void;
 }
 
+/** From this many steps the segments join into one scrubber (see `.segments--dense`). */
+const DENSE_AT = 12;
+
 function icon(d: string): SVGSVGElement {
   return svg(
     "svg",
@@ -55,7 +58,13 @@ export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
     ),
     h(
       "div",
-      { class: "segments" },
+      {
+        class: () =>
+          cx(
+            "segments",
+            props.segments().length >= DENSE_AT && "segments--dense",
+          ),
+      },
       each(
         () => props.segments(),
         (_, index) => index,
@@ -64,7 +73,8 @@ export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
             "button",
             {
               type: "button",
-              title: `Go to step ${index + 1}`,
+              "aria-label": `Go to step ${index + 1}`,
+              "data-label": `${index + 1}`,
               class: () =>
                 cx(
                   "segment",
@@ -90,7 +100,13 @@ export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
     ),
     h(
       "span",
-      { class: "counter", "aria-live": "polite" },
+      {
+        class: "counter",
+        "aria-live": "polite",
+        // as wide as the longest count ("12/12"), so it doesn't shift going from 9 to 10
+        style: () =>
+          `min-width: ${String(props.segments().length).length * 2 + 1}ch;`,
+      },
       () => Math.max(0, activeIndex()) + 1,
       h(
         "span",
