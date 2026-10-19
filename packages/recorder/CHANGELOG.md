@@ -1,5 +1,11 @@
 # @rustrak/openshowcase-recorder
 
+## 0.4.0
+
+### Minor Changes
+
+- [#15](https://github.com/rustrak/openshowcase/pull/15) [`9ab55d6`](https://github.com/rustrak/openshowcase/commit/9ab55d6e5d5329db3f1e65774ae06b44570cbe43) Thanks [@AbianS](https://github.com/AbianS)! - A recorder flow can name its demo with `title`: the `.osrec` carries it and the editor opens the demo with that title (shown in the player's browser bar and used for the export's file name). The skill tells the agent to pick a short, descriptive one.
+
 ## 0.3.0
 
 ### Minor Changes
