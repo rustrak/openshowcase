@@ -1,7 +1,7 @@
 import { buildDemoBundle } from "@rustrak/openshowcase-exporter";
 import type { Demo } from "@rustrak/openshowcase-schema";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { type App, createApp, h } from "vue";
+import { type App, createApp, h, reactive } from "vue";
 import InteractiveDemo from "../InteractiveDemo.vue";
 
 // Same cases as player-react's tests: the two adapters keep feature parity.
@@ -76,6 +76,35 @@ describe("<InteractiveDemo />", () => {
 
     await vi.waitFor(() => expect(hotspot()).not.toBeNull());
     expect(imageSources()).toContain(png);
+  });
+
+  it("follows appearance and hotspotStyle changes without remounting", async () => {
+    const png = URL.createObjectURL(await pngBlob());
+    const props = reactive<Record<string, unknown>>({
+      demo: {
+        ...demo,
+        steps: [
+          { ...demo.steps[0], image: { src: png, width: 800, height: 600 } },
+        ],
+      },
+    });
+    app = createApp({ render: () => h(InteractiveDemo, props) });
+    app.mount(container);
+    await vi.waitFor(() => expect(hotspot()).not.toBeNull());
+    const player = container.querySelector(".openshowcase-player");
+
+    props.appearance = "dark";
+    props.hotspotStyle = { bgColor: "#0047ff" };
+
+    await vi.waitFor(() =>
+      expect(player?.classList.contains("openshowcase-player--dark")).toBe(
+        true,
+      ),
+    );
+    expect(
+      (hotspot() as HTMLElement).style.getPropertyValue("--openshowcase-color"),
+    ).toBe("#0047ff");
+    expect(container.querySelector(".openshowcase-player")).toBe(player);
   });
 
   it("plays a single-file bundle", async () => {

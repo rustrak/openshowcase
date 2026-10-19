@@ -15,6 +15,8 @@ export {
   loadDemo,
 } from "./core/load-demo";
 // The single-file bundle reader, for tools that inspect a bundle (e.g. the extension's playground)
+export type { HotspotStyle } from "./core/photo-overlay";
 export { readStoredZip, type ZipEntry } from "./core/stored-zip";
 export type { PlayerOptions } from "./mount";
 export { Player } from "./mount";
+export type { PlayerAppearance } from "./ui/Player/Player";

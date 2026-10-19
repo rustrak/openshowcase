@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  type HotspotStyle,
   type PhotoHotspotVisual,
   PhotoOverlayController,
   type PhotoTooltipVisual,
@@ -16,19 +17,22 @@ function stubAnimationFrame() {
   );
 }
 
-function createController() {
+function createController(style?: HotspotStyle) {
   const hotspot = { current: undefined as PhotoHotspotVisual | undefined };
   const tooltip = { current: undefined as PhotoTooltipVisual | undefined };
-  const controller = new PhotoOverlayController({
-    setHotspot: (h) => (hotspot.current = h),
-    setTooltip: (t) => (tooltip.current = t),
-    showTooltip: () => {
-      if (tooltip.current) tooltip.current.visible = true;
+  const controller = new PhotoOverlayController(
+    {
+      setHotspot: (h) => (hotspot.current = h),
+      setTooltip: (t) => (tooltip.current = t),
+      showTooltip: () => {
+        if (tooltip.current) tooltip.current.visible = true;
+      },
+      hideTooltip: () => {
+        if (tooltip.current) tooltip.current.visible = false;
+      },
     },
-    hideTooltip: () => {
-      if (tooltip.current) tooltip.current.visible = false;
-    },
-  });
+    style,
+  );
   return { controller, hotspot, tooltip };
 }
 
@@ -48,6 +52,24 @@ describe("PhotoOverlayController", () => {
     controller.reveal(undefined, undefined, () => true);
     expect(hotspot.current).toBeUndefined();
     expect(tooltip.current).toBeUndefined();
+  });
+
+  it("lets the player's hotspotStyle override the step's own colors", () => {
+    const { controller, hotspot, tooltip } = createController({
+      bgColor: "#0047FF",
+      textColor: "#fff",
+    });
+    controller.reveal(
+      { x: 0.5, y: 0.5, label: "Hi", bgColor: "#111", textColor: "#222" },
+      { left: 10, top: 20 },
+      () => true,
+    );
+
+    expect(hotspot.current?.color).toBe("#0047FF");
+    expect(tooltip.current).toMatchObject({
+      bgColor: "#0047FF",
+      textColor: "#fff",
+    });
   });
 
   it("pops the hotspot in instantly on first reveal (no previous anchor)", () => {

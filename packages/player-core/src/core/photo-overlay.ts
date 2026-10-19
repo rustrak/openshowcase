@@ -23,6 +23,9 @@ export interface PhotoTooltipVisual {
   textColor?: string;
 }
 
+/** Colors that override every step's own hotspot/tooltip colors, e.g. to force a brand color. */
+export type HotspotStyle = Pick<HotspotData, "bgColor" | "textColor">;
+
 export interface PhotoOverlayCallbacks {
   setHotspot: (hotspot: PhotoHotspotVisual | undefined) => void;
   setTooltip: (tooltip: PhotoTooltipVisual | undefined) => void;
@@ -44,7 +47,27 @@ export class PhotoOverlayController {
   private lastAnchor: { left: number; top: number } | undefined;
   private tooltipTimer: ReturnType<typeof setTimeout> | undefined;
 
-  constructor(private readonly callbacks: PhotoOverlayCallbacks) {}
+  constructor(
+    private readonly callbacks: PhotoOverlayCallbacks,
+    private style: HotspotStyle = {},
+  ) {}
+
+  /** Swaps the color override; applies from the next `reveal()` (see `colors()` to recolor now). */
+  setStyle(style: HotspotStyle = {}): void {
+    this.style = style;
+  }
+
+  /** The colors a hotspot is drawn with: the override, else its own, else the defaults. */
+  colors(hotspot: HotspotData): Required<HotspotStyle> {
+    return {
+      bgColor:
+        this.style.bgColor ?? hotspot.bgColor ?? defaultHotspotStyle.bgColor,
+      textColor:
+        this.style.textColor ??
+        hotspot.textColor ??
+        defaultHotspotStyle.textColor,
+    };
+  }
 
   /** Show (or hide) the overlay for a newly revealed photo step. */
   reveal(
@@ -60,7 +83,7 @@ export class PhotoOverlayController {
       return;
     }
 
-    const bg = hotspot.bgColor ?? defaultHotspotStyle.bgColor;
+    const { bgColor: bg, textColor } = this.colors(hotspot);
     const from = this.lastAnchor;
     const travels =
       from != null &&
@@ -105,7 +128,7 @@ export class PhotoOverlayController {
         visible: false,
         text: hotspot.label,
         bgColor: bg,
-        textColor: hotspot.textColor ?? defaultHotspotStyle.textColor,
+        textColor,
       });
       // the callout appears once the point has arrived
       this.tooltipTimer = setTimeout(

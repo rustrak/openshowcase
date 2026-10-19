@@ -75,6 +75,52 @@ describe("Player (mount.ts) integration", () => {
     );
   });
 
+  it("switches appearance and hotspot colors live, without remounting", async () => {
+    player = new Player({ container, demo: createDemo() });
+    player.mount();
+    const hotspot = () =>
+      container.querySelector<HTMLElement>('[aria-label="Hotspot"]');
+    await vi.waitFor(() => expect(hotspot()).not.toBeNull());
+    const root = container.querySelector(".openshowcase-player");
+    const shownHotspot = hotspot();
+
+    player.setAppearance("dark");
+    expect(root?.classList.contains("openshowcase-player--dark")).toBe(true);
+    player.setAppearance(undefined); // back to the demo's own (light)
+    expect(root?.classList.contains("openshowcase-player--dark")).toBe(false);
+
+    player.setHotspotStyle({ bgColor: "#0047ff" });
+    expect(hotspot()?.style.getPropertyValue("--openshowcase-color")).toBe(
+      "#0047ff",
+    );
+    expect(container.querySelector(".openshowcase-player")).toBe(root);
+    expect(hotspot()).toBe(shownHotspot);
+  });
+
+  it('follows prefers-color-scheme live with appearance "auto"', async () => {
+    let listener: ((event: { matches: boolean }) => void) | undefined;
+    vi.spyOn(window, "matchMedia").mockReturnValue({
+      matches: false,
+      addEventListener: (_: string, fn: typeof listener) => {
+        listener = fn;
+      },
+      removeEventListener: () => {
+        listener = undefined;
+      },
+    } as unknown as MediaQueryList);
+    player = new Player({ container, demo: createDemo(), appearance: "auto" });
+    player.mount();
+    const root = container.querySelector(".openshowcase-player");
+    expect(root?.classList.contains("openshowcase-player--dark")).toBe(false);
+
+    listener?.({ matches: true });
+    expect(root?.classList.contains("openshowcase-player--dark")).toBe(true);
+
+    player.destroy();
+    expect(listener).toBeUndefined();
+    player = undefined;
+  });
+
   it("advances to the next step when the hotspot is clicked", async () => {
     const onStepChange = vi.fn();
     player = new Player({ container, demo: createDemo(), onStepChange });

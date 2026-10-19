@@ -72,6 +72,37 @@ describe("<InteractiveDemo />", () => {
     expect(imageSources()).toContain(png);
   });
 
+  it("follows appearance and hotspotStyle changes without remounting", async () => {
+    const png = URL.createObjectURL(await pngBlob());
+    const preloaded: Demo = {
+      ...demo,
+      steps: [
+        { ...demo.steps[0]!, image: { src: png, width: 800, height: 600 } },
+      ],
+    } as Demo;
+    root.render(<InteractiveDemo demo={preloaded} />);
+    await vi.waitFor(() => expect(hotspot()).not.toBeNull());
+    const player = container.querySelector(".openshowcase-player");
+
+    root.render(
+      <InteractiveDemo
+        demo={preloaded}
+        appearance="dark"
+        hotspotStyle={{ bgColor: "#0047ff" }}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(player?.classList.contains("openshowcase-player--dark")).toBe(
+        true,
+      ),
+    );
+    expect(
+      (hotspot() as HTMLElement).style.getPropertyValue("--openshowcase-color"),
+    ).toBe("#0047ff");
+    expect(container.querySelector(".openshowcase-player")).toBe(player);
+  });
+
   it("plays a single-file bundle", async () => {
     const bundle = await buildDemoBundle({
       demo,

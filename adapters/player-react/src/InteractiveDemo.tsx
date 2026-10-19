@@ -1,7 +1,9 @@
 import {
   type AssetResolver,
+  type HotspotStyle,
   loadDemo,
   Player,
+  type PlayerAppearance,
 } from "@rustrak/openshowcase-player-core";
 import type { Demo, Step } from "@rustrak/openshowcase-schema";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
@@ -20,6 +22,11 @@ export interface InteractiveDemoProps {
   aspectRatio?: number;
   className?: string;
   style?: CSSProperties;
+  /** Overrides every step's hotspot/tooltip colors, e.g. to force your brand color. */
+  hotspotStyle?: HotspotStyle;
+  /** Overrides the demo's light/dark appearance, e.g. to follow your site's mode,
+   * or `"auto"` for the viewer's `prefers-color-scheme`. Changes apply live. */
+  appearance?: PlayerAppearance;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -40,12 +47,20 @@ export function InteractiveDemo({
   aspectRatio = 16 / 9,
   className,
   style,
+  hotspotStyle,
+  appearance,
   onStepChange,
 }: InteractiveDemoProps) {
   const [state, setState] = useState<LoadState>(
     demo ? { status: "ready", demo, assetBaseUrl } : { status: "loading" },
   );
   const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<Player>(undefined);
+  // Compared by value: an inline `hotspotStyle={{...}}` is a new object every render
+  const { bgColor, textColor } = hotspotStyle ?? {};
+  // Read at mount; later changes go through the setters below, without a remount
+  const live = useRef({ appearance, bgColor, textColor });
+  live.current = { appearance, bgColor, textColor };
 
   useEffect(() => {
     if (demo) {
@@ -95,11 +110,28 @@ export function InteractiveDemo({
       demo: state.demo,
       assetBaseUrl: state.assetBaseUrl,
       resolveAsset: state.resolveAsset,
+      hotspotStyle: {
+        bgColor: live.current.bgColor,
+        textColor: live.current.textColor,
+      },
+      appearance: live.current.appearance,
       onStepChange,
     });
     player.mount();
-    return () => player.destroy();
+    playerRef.current = player;
+    return () => {
+      player.destroy();
+      playerRef.current = undefined;
+    };
   }, [state, onStepChange]);
+
+  useEffect(() => {
+    playerRef.current?.setAppearance(appearance);
+  }, [appearance]);
+
+  useEffect(() => {
+    playerRef.current?.setHotspotStyle({ bgColor, textColor });
+  }, [bgColor, textColor]);
 
   // The player always takes its content's own size — the container imposes no aspect ratio.
   const ready = state.status === "ready";

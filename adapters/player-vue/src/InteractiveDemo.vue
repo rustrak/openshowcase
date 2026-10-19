@@ -81,12 +81,23 @@ function mountPlayer(): void {
     demo: state.value.demo,
     assetBaseUrl: state.value.assetBaseUrl,
     resolveAsset: state.value.resolveAsset,
+    hotspotStyle: props.hotspotStyle,
+    appearance: props.appearance,
     onStepChange: props.onStepChange,
   });
   player.mount();
 }
 
 watch(state, mountPlayer);
+// Live: no remount, the current step keeps playing
+watch(
+  () => props.appearance,
+  (appearance) => player?.setAppearance(appearance),
+);
+watch(
+  () => [props.hotspotStyle?.bgColor, props.hotspotStyle?.textColor],
+  () => player?.setHotspotStyle(props.hotspotStyle),
+);
 onMounted(mountPlayer);
 onUnmounted(() => player?.destroy());
 
