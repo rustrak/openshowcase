@@ -243,9 +243,16 @@ export function each<T>(
         entry.view.parentNode?.removeChild(entry.view);
       }
       entries = next;
-      const parent = anchor.parentNode;
-      if (parent)
-        for (const { view } of next.values()) parent.insertBefore(view, anchor);
+      // Only move views that are out of place: re-inserting one detaches it, which drops a
+      // click in progress on it (the navbar's segments update every frame while a clip plays).
+      if (anchor.parentNode) {
+        let ref: Node = anchor;
+        for (const { view } of [...next.values()].reverse()) {
+          if (view.nextSibling !== ref)
+            anchor.parentNode.insertBefore(view, ref);
+          ref = view;
+        }
+      }
     });
   });
   onCleanup(() => {
