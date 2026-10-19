@@ -59,12 +59,10 @@ export async function record(
     const cutSec =
       direction.cuts.reduce((sum, c) => sum + c.end - c.start, 0) / 1000;
 
-    const bytes = await automation(
-      worker,
-      "exportFile",
-      recordingId,
-      direction,
-    );
+    const bytes = await automation(worker, "exportFile", recordingId, {
+      ...direction,
+      ...(flow.title && { title: flow.title }),
+    });
     const file = await open(options.out, "w");
     try {
       for (let offset = 0; offset < bytes; offset += CHUNK_BYTES) {

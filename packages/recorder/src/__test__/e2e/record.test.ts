@@ -86,6 +86,7 @@ function readHeader(path: string) {
 
 const flow = () =>
   parseFlow({
+    title: "Create an invoice",
     url,
     steps: [
       {
@@ -144,7 +145,11 @@ describe("record", () => {
       "Save",
     ]);
     expect(header.markers.some((m) => m.kind === "type")).toBe(true);
-    expect(header.direction).toMatchObject({ cuts: [], zooms: [] });
+    expect(header.direction).toMatchObject({
+      cuts: [],
+      zooms: [],
+      title: "Create an invoice",
+    });
   });
 
   it("opens in the extension's editor as steps with the flow's tooltips", async () => {
@@ -163,6 +168,11 @@ describe("record", () => {
       const steps = page.getByLabel(/^Step \d+\. Drag to reorder$/);
       // lead-in clip, click photo, typing clip, click photo, tail clip
       await expect.poll(() => steps.count(), { timeout: 15_000 }).toBe(5);
+
+      // the flow's title names the demo
+      await expect
+        .poll(() => page.getByLabel("Demo title").inputValue())
+        .toBe("Create an invoice");
 
       await steps.nth(1).click();
       await expect

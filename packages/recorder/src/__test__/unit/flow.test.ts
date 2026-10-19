@@ -57,6 +57,15 @@ describe("parseFlow", () => {
     }
   });
 
+  it("takes an optional title, trimmed and non-empty", () => {
+    const base = { url: "https://example.com", steps: [] };
+    expect(parseFlow({ ...base, title: "  Create an invoice " }).title).toBe(
+      "Create an invoice",
+    );
+    expect(parseFlow(base).title).toBeUndefined();
+    expect(() => parseFlow({ ...base, title: " " })).toThrow(/title/);
+  });
+
   it("defaults the viewport to 1280x800", () => {
     const flow = parseFlow({ url: "https://example.com", steps: [] });
     expect(flow.viewport).toEqual({ width: 1280, height: 800 });

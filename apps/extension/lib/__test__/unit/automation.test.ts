@@ -113,6 +113,7 @@ describe("exportFile / readChunk", () => {
       clicks: [{ start: 2_450, end: 2_600, label: "Open the menu", zoom: 2 }],
       cuts: [{ start: 2_700, end: 2_800 }],
       zooms: [],
+      title: "Create an invoice",
     });
 
     let base64 = "";
@@ -139,6 +140,7 @@ describe("exportFile / readChunk", () => {
     expect(file.direction).toEqual({
       cuts: [{ start: 2_700, end: 2_800 }],
       zooms: [],
+      title: "Create an invoice",
     });
     expect([...new Uint8Array(await file.video.arrayBuffer())]).toEqual([
       9, 8, 7,

@@ -57,10 +57,15 @@ export function createAutomation(deps: AutomationDeps) {
         deps.getMarkers(recordingId),
       ]);
       if (!record) throw new Error(`No recording ${recordingId}`);
-      const { clicks = [], cuts = [], zooms = [] } = direction ?? {};
+      const { clicks = [], ...recorded } = direction ?? {};
       exported = packRecording(
         fileFromRecords(
-          { ...record, ...(direction && { direction: { cuts, zooms } }) },
+          {
+            ...record,
+            ...(direction && {
+              direction: { cuts: [], zooms: [], ...recorded },
+            }),
+          },
           cueClicks(markers, clicks),
         ),
       );

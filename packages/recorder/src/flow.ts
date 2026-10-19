@@ -89,6 +89,10 @@ const Step = v.variant("action", [
 ]);
 
 const Flow = v.object({
+  /** The demo's name: the title it opens with in the editor, shown in its browser frame. */
+  title: v.optional(
+    v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(80)),
+  ),
   url: v.pipe(v.string(), v.url()),
   viewport: v.optional(
     v.object({

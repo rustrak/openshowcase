@@ -34,6 +34,7 @@ A flow:
 
 ```json
 {
+  "title": "Create an invoice",
   "url": "https://app.example.com/invoices",
   "viewport": { "width": 1280, "height": 800 },
   "steps": [

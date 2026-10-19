@@ -21,6 +21,7 @@ A user guide nobody finishes is worthless. Think like a video editor, not a test
 - **No dead time.** Every `wait` is cut out of the video automatically, and so is time spent waiting for a target to appear or a page to load. So wait for the app freely (`{ "action": "wait", "for": <target> }` is best), but never use a wait to "show" something: the step's own pause and the final shot do that.
 - **Framing is automatic.** Before using a target near the top or bottom edge, the recorder scrolls it to the middle of the screen with a smooth scroll. Add a `scroll` step only to show something on purpose (e.g. the totals at the end).
 - **Realistic, made-up data**, short values (typing takes screen time).
+- **Name it.** Give the flow a `title`: what the viewer learns to do, as a short task in their language and the app's own words ("Create an invoice", "Invite a teammate"). 2–5 words, no app name, no "Demo of…" or "How to…". It's the demo's name in the editor, shown in the player's browser bar and used as the export's file name.
 
 ## Workflow
 
@@ -46,6 +47,7 @@ When the app's UI changes, re-run steps 6 and 7 with the same flow: the flow is 
 
 ```json
 {
+  "title": "Create an invoice",
   "url": "https://app.example.com/invoices",
   "viewport": { "width": 1440, "height": 900 },
   "steps": [
@@ -60,7 +62,7 @@ When the app's UI changes, re-run steps 6 and 7 with the same flow: the flow is 
 }
 ```
 
-`viewport` is optional (default 1280x800): the size of the demo.
+`title` is the demo's name (see "Name it" above). `viewport` is optional (default 1280x800): the size of the demo.
 
 | action | fields | does |
 |---|---|---|

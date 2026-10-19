@@ -89,7 +89,11 @@ export async function unpackRecording(blob: Blob): Promise<RecordingFile> {
       (m) => typeof m?.capturedAt === "number" && typeof m.pageUrl === "string",
     ) ||
     (direction != null &&
-      !(Array.isArray(direction.cuts) && Array.isArray(direction.zooms)))
+      !(
+        Array.isArray(direction.cuts) &&
+        Array.isArray(direction.zooms) &&
+        (direction.title == null || typeof direction.title === "string")
+      ))
   )
     throw damaged();
 

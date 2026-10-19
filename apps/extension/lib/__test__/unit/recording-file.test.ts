@@ -59,6 +59,7 @@ describe("packRecording / unpackRecording", () => {
     const direction = {
       cuts: [{ start: 2_600, end: 2_900 }],
       zooms: [{ start: 2_500, end: 2_800, x: 0.4, y: 0.6, scale: 2 }],
+      title: "Create an invoice",
     };
     const unpacked = await unpackRecording(
       packRecording(recordingFile({ direction })),
