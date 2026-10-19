@@ -7,7 +7,7 @@ export default defineConfig({
   plugins: [vue()],
   // Pre-bundle up front: an on-demand optimize mid-run reloads the page and breaks the
   // in-flight test (same as player-core and the exporter).
-  optimizeDeps: { include: ["vue", "jszip"] },
+  optimizeDeps: { include: ["vue", "@rustrak/openshowcase-exporter > jszip"] },
   test: {
     include: ["src/__test__/**/*.test.ts"],
     browser: {
