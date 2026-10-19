@@ -1,5 +1,13 @@
 # @rustrak/openshowcase-player-vue
 
+## 0.3.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @rustrak/openshowcase-player-core@0.3.0
+  - @rustrak/openshowcase-schema@0.3.0
+
 ## 0.2.0
 
 ### Patch Changes
