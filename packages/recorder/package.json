@@ -1,0 +1,53 @@
+{
+  "name": "@rustrak/openshowcase-recorder",
+  "version": "0.2.0",
+  "description": "CLI that records an OpenShowcase demo by driving a headless Chromium through a scripted flow, for AI agents",
+  "keywords": [
+    "openshowcase",
+    "interactive-demo",
+    "product-demo",
+    "recorder",
+    "playwright",
+    "ai-agent"
+  ],
+  "license": "MIT",
+  "author": "AbianS",
+  "homepage": "https://github.com/rustrak/openshowcase/tree/main/packages/recorder#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rustrak/openshowcase.git",
+    "directory": "packages/recorder"
+  },
+  "bugs": {
+    "url": "https://github.com/rustrak/openshowcase/issues"
+  },
+  "type": "module",
+  "bin": {
+    "openshowcase-recorder": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": "^22.19.0 || ^24.5.0 || >=26.0.0"
+  },
+  "scripts": {
+    "build": "rslib build && node -e \"require('node:fs').cpSync('../../apps/extension/.output/chrome-mv3', 'dist/extension', { recursive: true })\"",
+    "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "playwright": "catalog:tooling",
+    "valibot": "catalog:core"
+  },
+  "devDependencies": {
+    "@rslib/core": "catalog:tooling",
+    "@types/node": "24.19.2",
+    "typescript": "catalog:core",
+    "vitest": "catalog:tooling"
+  }
+}

@@ -24,6 +24,7 @@ catalogs:
   # What every workspace builds with.
   core:
     typescript: 7.0.2
+    valibot: 1.5.0
 
   # TypeScript 7 ships only the native `tsc`: its package no longer exports the JS compiler
   # API. player-vue's toolchain still loads that API (vue-tsc, and @vue/compiler-sfc through
