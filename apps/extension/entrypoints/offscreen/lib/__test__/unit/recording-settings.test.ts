@@ -30,8 +30,8 @@ describe("computeVideoBitrate", () => {
       mimeType: "video/webm;codecs=vp8",
     });
 
-    expect(vp9).toBe(3_168_000);
-    expect(vp8).toBe(5_760_000);
+    expect(vp9).toBe(5_760_000);
+    expect(vp8).toBe(10_368_000);
   });
 
   it("never goes below the 3 Mbps floor for tiny dimensions", () => {
@@ -44,14 +44,14 @@ describe("computeVideoBitrate", () => {
     expect(bitrate).toBe(3_000_000);
   });
 
-  it("never exceeds vp9's 9 Mbps ceiling for huge dimensions", () => {
+  it("never exceeds vp9's 16 Mbps ceiling for huge dimensions", () => {
     const bitrate = computeVideoBitrate({
       tabWidth: 4000,
       tabHeight: 3000,
       scale: 2,
       mimeType: "video/webm;codecs=vp9",
     });
-    expect(bitrate).toBe(9_000_000);
+    expect(bitrate).toBe(16_000_000);
   });
 
   it("spends more bits at 60fps than at 30fps — but not double: consecutive frames are more alike", () => {
@@ -75,7 +75,7 @@ describe("computeVideoBitrate", () => {
       mimeType: "video/webm;codecs=vp9",
       fps: 60,
     });
-    expect(bitrate).toBeGreaterThan(9_000_000);
-    expect(bitrate).toBeLessThanOrEqual(16_000_000);
+    expect(bitrate).toBeGreaterThan(16_000_000);
+    expect(bitrate).toBeLessThanOrEqual(27_000_000);
   });
 });

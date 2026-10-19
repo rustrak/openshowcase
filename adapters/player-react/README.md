@@ -12,17 +12,17 @@ Requires React 18 or newer.
 
 ## Usage
 
-Unzip an exported demo into your static assets (e.g. `public/demos/my-demo/`) and point the player at its `steps.json`:
+Put an exported `.openshowcase` file in your static assets (e.g. `public/demos/`) and point the player at it:
 
 ```tsx
 import { InteractiveDemo } from "@rustrak/openshowcase-player-react";
 
 export function ProductTour() {
-  return <InteractiveDemo src="/demos/my-demo/steps.json" />;
+  return <InteractiveDemo src="/demos/my-demo.openshowcase" />;
 }
 ```
 
-Asset paths in `steps.json` are resolved relative to its directory. If the bundle is served from another domain, enable CORS on it.
+The file downloads in one request and each step shows as soon as its bytes arrive. You can also unzip the exported `.zip` and point `src` at its `steps.json`: asset paths are then resolved relative to its directory. If the demo is served from another domain, enable CORS on it.
 
 In SSR frameworks (Next.js App Router, etc.) render it from a client component (`"use client"`), because the player needs the DOM.
 
@@ -30,7 +30,7 @@ In SSR frameworks (Next.js App Router, etc.) render it from a client component (
 
 | Prop | Type | Description |
 | --- | --- | --- |
-| `src` | `string` | URL of a `steps.json`. Fetched and validated. |
+| `src` | `string` | URL of a `.openshowcase` file (or the exported `.zip`), or of an unzipped `steps.json`. Fetched and validated. |
 | `demo` | `Demo` | A preloaded demo object, as an alternative to `src`. |
 | `assetBaseUrl` | `string` | Overrides the asset base URL inferred from `src`. |
 | `aspectRatio` | `number` | Width/height ratio used while the container has no explicit height. Defaults to `16 / 9`. |

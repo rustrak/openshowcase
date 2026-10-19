@@ -1,4 +1,5 @@
 import type { Demo, Step } from "@rustrak/openshowcase-schema";
+import type { AssetResolver } from "./core/load-demo";
 import { mount as mountView } from "./dom/h";
 import { createPlayerView, type PlayerView } from "./ui/Player/Player";
 
@@ -7,6 +8,8 @@ export interface PlayerOptions {
   demo: Demo;
   /** Prefix prepended to relative asset src (image/video), e.g. the bundle's base URL. */
   assetBaseUrl?: string;
+  /** Serves asset URLs instead of `assetBaseUrl`: pass `loadDemo()`'s for a bundle. */
+  resolveAsset?: AssetResolver;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -24,10 +27,16 @@ export class Player {
   }
 
   mount(): void {
-    const { container, demo, assetBaseUrl, onStepChange } = this.options;
+    const { container, demo, assetBaseUrl, resolveAsset, onStepChange } =
+      this.options;
     let view!: PlayerView;
     this.unmount = mountView(() => {
-      view = createPlayerView({ demo, assetBaseUrl, onStepChange });
+      view = createPlayerView({
+        demo,
+        assetBaseUrl,
+        resolveAsset,
+        onStepChange,
+      });
       return view.element;
     }, container);
     this.view = view;

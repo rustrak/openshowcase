@@ -41,6 +41,8 @@
     "build": "rslib build",
     "dev": "rslib build --watch",
     "check-types": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "size": "size-limit"
   },
   "dependencies": {
@@ -60,9 +62,16 @@
   "devDependencies": {
     "@rsbuild/plugin-react": "2.1.0",
     "@rslib/core": "catalog:tooling",
+    "@rustrak/openshowcase-exporter": "workspace:*",
     "@size-limit/file": "catalog:tooling",
     "@types/react": "catalog:react",
+    "@types/react-dom": "catalog:react",
+    "@vitest/browser-playwright": "catalog:tooling",
+    "playwright": "catalog:tooling",
+    "react": "catalog:react",
+    "react-dom": "catalog:react",
     "size-limit": "catalog:tooling",
-    "typescript": "catalog:core"
+    "typescript": "catalog:core",
+    "vitest": "catalog:tooling"
   }
 }

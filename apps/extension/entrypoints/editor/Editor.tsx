@@ -1,4 +1,4 @@
-import { blobToWebp, buildDemoBundle } from "@rustrak/openshowcase-exporter";
+import { buildDemoBundle } from "@rustrak/openshowcase-exporter";
 import {
   type Demo,
   defaultHotspotStyle,
@@ -9,8 +9,10 @@ import {
 } from "@rustrak/openshowcase-schema";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { browser } from "wxt/browser";
 import type { useColorScheme } from "@/hooks/use-color-scheme";
 import type { RecordingRecord } from "@/lib/db";
+import { playgroundQuery } from "../playground/core/playground-url";
 import { ExportDialog } from "./components/ExportDialog";
 import { Inspector, type InspectorTab } from "./components/inspector/Inspector";
 import type { StepInspectorProps } from "./components/inspector/StepInspector";
@@ -20,12 +22,15 @@ import { Sequence } from "./components/sequence/Sequence";
 import { Stage } from "./components/stage/Stage";
 import { type StageTool, StageToolbar } from "./components/stage/StageToolbar";
 import { type EditorMode, TopBar } from "./components/TopBar";
+import { type ExportFormat, exportFileName } from "./core/export-format";
+import { photoEncoding } from "./core/photo-encoding";
 import { MIN_CLIP_SEC } from "./core/sequence-layout";
 import * as StepEditor from "./core/step-editor";
 import { useClipPlayback } from "./hooks/use-clip-playback";
 import { useEditorDocument } from "./hooks/use-editor-document";
 import { type Hotkey, useHotkeys } from "./hooks/use-hotkeys";
 import { useFrameExtraction } from "./hooks/use-recording";
+import { useVideoExport } from "./hooks/use-video-export";
 import {
   DEFAULT_HOTSPOT_LABEL,
   type EditableStep,
@@ -34,6 +39,7 @@ import {
   toSchemaStep,
   type VideoData,
 } from "./lib/editable-step";
+import { encodePhoto } from "./lib/export-images";
 
 interface EditorProps {
   recordingId: string;
@@ -279,31 +285,56 @@ export function Editor({
     };
   }, [steps, theme, title, recording, videoUrl, duration, recordingId]);
 
-  const hasVideoSteps =
-    previewDemo?.steps.some((s) => s.type === "video") ?? false;
+  const prepareVideo = useVideoExport(recording.videoBlob);
+
+  /** Each photo step's frame, encoded for export (cached, so it runs once per frame). */
+  const encodePhotos = useCallback(async () => {
+    const encoded = new Map<string, Blob>();
+    await Promise.all(
+      steps.map(async ({ id, data }) => {
+        if (data.kind !== "photo" || !data.imageBlob) return;
+        encoded.set(
+          id,
+          await encodePhoto(data.imageBlob, photoEncoding(data.panZoom)),
+        );
+      }),
+    );
+    return encoded;
+  }, [steps]);
 
   const estimateSize = useCallback(async () => {
-    let total = hasVideoSteps ? (recording.videoBlob?.size ?? 0) : 0;
-    for (const step of steps) {
-      if (step.data.kind !== "photo" || !step.data.imageBlob) continue;
-      total += (await blobToWebp(step.data.imageBlob)).size;
-    }
+    if (!previewDemo) return 0;
+    const [video, photos] = await Promise.all([
+      prepareVideo(previewDemo),
+      encodePhotos(),
+    ]);
+    let total = video.videoBlob?.size ?? 0;
+    for (const photo of photos.values()) total += photo.size;
     return total;
-  }, [steps, hasVideoSteps, recording.videoBlob]);
+  }, [previewDemo, prepareVideo, encodePhotos]);
 
-  async function exportBundle(): Promise<string> {
-    if (!previewDemo) throw new Error("Frames are still being extracted");
-    const imageBlobs = new Map<string, Blob>();
-    for (const step of steps) {
-      if (step.data.kind === "photo" && step.data.imageBlob)
-        imageBlobs.set(step.id, step.data.imageBlob);
-    }
-    const blob = await buildDemoBundle({
-      demo: previewDemo,
-      videoBlob: hasVideoSteps ? (recording.videoBlob ?? undefined) : undefined,
-      imageBlobs,
+  /** The last download, kept for the playground (its blob: URL lives as long as this tab). */
+  const lastExport = useRef<{ url: string; file: string }>(undefined);
+
+  function openPlayground() {
+    if (!lastExport.current) return;
+    void browser.tabs.create({
+      url: browser.runtime.getURL(
+        `/playground.html${playgroundQuery({ url: lastExport.current.url, name: lastExport.current.file })}`,
+      ),
     });
-    const file = `${title.trim().replace(/\s+/g, "-").toLowerCase() || "demo"}.zip`;
+  }
+
+  async function exportBundle(format: ExportFormat): Promise<string> {
+    if (!previewDemo) throw new Error("Frames are still being extracted");
+    const [{ demo, videoBlob }, imageBlobs] = await Promise.all([
+      prepareVideo(previewDemo),
+      encodePhotos(),
+    ]);
+    const blob = await buildDemoBundle({ demo, videoBlob, imageBlobs });
+    const file = exportFileName(title, format);
+    if (lastExport.current) URL.revokeObjectURL(lastExport.current.url);
+    lastExport.current = { url: URL.createObjectURL(blob), file };
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -487,6 +518,7 @@ export function Editor({
         clipCount={steps.filter((s) => s.data.kind === "video").length}
         estimate={estimateSize}
         onExport={exportBundle}
+        onOpenPlayground={openPlayground}
       />
       <ShortcutsDialog open={shortcutsOpen} onOpenChange={setShortcutsOpen} />
     </div>

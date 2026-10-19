@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { Player } from "@rustrak/openshowcase-player-core";
-import { type Demo, parseDemo } from "@rustrak/openshowcase-schema";
+import {
+  type AssetResolver,
+  loadDemo,
+  Player,
+} from "@rustrak/openshowcase-player-core";
+import type { Demo } from "@rustrak/openshowcase-schema";
 import { onMounted, onUnmounted, ref, watch } from "vue";
 import type { InteractiveDemoProps } from "./InteractiveDemo.types";
 
@@ -11,11 +15,12 @@ const props = withDefaults(defineProps<InteractiveDemoProps>(), {
 type LoadState =
   | { status: "loading" }
   | { status: "error"; message: string }
-  | { status: "ready"; demo: Demo; assetBaseUrl?: string };
-
-function dirnameOf(url: string): string {
-  return url.slice(0, url.lastIndexOf("/"));
-}
+  | {
+      status: "ready";
+      demo: Demo;
+      assetBaseUrl?: string;
+      resolveAsset?: AssetResolver;
+    };
 
 const state = ref<LoadState>(
   props.demo
@@ -40,30 +45,23 @@ watch(
       return;
     }
 
-    let cancelled = false;
+    const abort = new AbortController();
+    let dispose: (() => void) | undefined;
     onCleanup(() => {
-      cancelled = true;
+      abort.abort();
+      dispose?.();
     });
     state.value = { status: "loading" };
 
-    fetch(src)
-      .then((res) => {
-        if (!res.ok)
-          throw new Error(
-            `Failed to load demo: ${res.status} ${res.statusText}`,
-          );
-        return res.json();
-      })
-      .then((json) => {
-        if (cancelled) return;
-        state.value = {
-          status: "ready",
-          demo: parseDemo(json),
-          assetBaseUrl: assetBaseUrl ?? dirnameOf(src),
-        };
+    loadDemo(src, { assetBaseUrl, signal: abort.signal })
+      .then(({ dispose: free, ...loaded }) => {
+        // Unmounted (or src changed) while loading: free it right away
+        if (abort.signal.aborted) return free();
+        dispose = free;
+        state.value = { status: "ready", ...loaded };
       })
       .catch((error: unknown) => {
-        if (cancelled) return;
+        if (abort.signal.aborted) return;
         state.value = {
           status: "error",
           message:
@@ -82,6 +80,7 @@ function mountPlayer(): void {
     container: containerRef.value,
     demo: state.value.demo,
     assetBaseUrl: state.value.assetBaseUrl,
+    resolveAsset: state.value.resolveAsset,
     onStepChange: props.onStepChange,
   });
   player.mount();

@@ -1,5 +1,6 @@
 import {
   ArrowUpRight,
+  MonitorPlay,
   MousePointerClick,
   Square,
   TriangleAlert,
@@ -8,6 +9,12 @@ import { browser } from "wxt/browser";
 import { MadeByRustrak } from "@/components/brand/made-by-rustrak";
 import { OpenShowcaseWordmark } from "@/components/brand/openshowcase-wordmark";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useColorScheme } from "@/hooks/use-color-scheme";
 import { sendMessage } from "@/lib/messaging";
 import { RecDot } from "./components/RecDot";
@@ -44,6 +51,13 @@ function App() {
     window.close();
   }
 
+  async function openPlayground() {
+    await browser.tabs.create({
+      url: browser.runtime.getURL("/playground.html"),
+    });
+    window.close();
+  }
+
   async function openEditor(recordingId: string) {
     await browser.tabs.create({
       url: browser.runtime.getURL(`/editor.html?recordingId=${recordingId}`),
@@ -52,38 +66,61 @@ function App() {
   }
 
   return (
-    <div className="flex w-[320px] flex-col bg-window text-foreground">
-      <header className="flex h-11 items-center justify-between px-4">
-        <OpenShowcaseWordmark className="h-[14px] w-auto" />
-        {session.active && <ElapsedChip recordingId={session.recordingId} />}
-      </header>
+    <TooltipProvider delay={400}>
+      <div className="flex w-[320px] flex-col bg-window text-foreground">
+        <header className="flex h-11 items-center justify-between px-4">
+          <OpenShowcaseWordmark className="h-[14px] w-auto" />
+          {session.active ? (
+            <ElapsedChip recordingId={session.recordingId} />
+          ) : (
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon-sm"
+                    aria-label="Test an exported demo"
+                    className="-mr-2 text-muted-foreground hover:text-foreground [&_svg]:size-4"
+                    onClick={openPlayground}
+                  />
+                }
+              >
+                <MonitorPlay />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                Test an exported demo
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </header>
 
-      <main className="flex flex-col gap-3 px-3 pb-3">
-        {session.active ? (
-          <RecordingView
-            tabId={session.tabId}
-            activeTabId={activeTab?.id}
-            clickCount={session.clickCount ?? 0}
-            onStop={() => send("stopRecording")}
-          />
-        ) : (
-          <IdleView
-            tab={activeTab}
-            onStart={startRecording}
-            recent={
-              <RecentRecordings recordings={recent} onOpen={openEditor} />
-            }
-          />
-        )}
-      </main>
+        <main className="flex flex-col gap-3 px-3 pb-3">
+          {session.active ? (
+            <RecordingView
+              tabId={session.tabId}
+              activeTabId={activeTab?.id}
+              clickCount={session.clickCount ?? 0}
+              onStop={() => send("stopRecording")}
+            />
+          ) : (
+            <IdleView
+              tab={activeTab}
+              onStart={startRecording}
+              recent={
+                <RecentRecordings recordings={recent} onOpen={openEditor} />
+              }
+            />
+          )}
+        </main>
 
-      <footer className="flex items-center justify-between border-t border-border/60 bg-background px-4 py-2.5">
-        <span className="text-2xs text-muted-foreground">
-          Open source · self-hosted
-        </span>
-        <MadeByRustrak />
-      </footer>
-    </div>
+        <footer className="flex items-center justify-between border-t border-border/60 bg-background px-4 py-2.5">
+          <span className="text-2xs text-muted-foreground">
+            Open source · self-hosted
+          </span>
+          <MadeByRustrak />
+        </footer>
+      </div>
+    </TooltipProvider>
   );
 }
 

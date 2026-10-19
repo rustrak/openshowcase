@@ -33,8 +33,9 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
    clicks, scrolls and typing.
 2. **Edit.** Each click becomes a photo step with a hotspot, and activity between
    clicks becomes a video clip. Write tooltips, trim clips, zoom and reorder.
-3. **Export.** You get a zip with `steps.json`, WebP frames and the WebM
-   recording.
+3. **Export.** You get one `.openshowcase` file with the steps, AVIF frames and
+   only the parts of the recording the demo plays, re-encoded (or the same thing as
+   a `.zip`).
 
 <img width="2000" height="640" alt="pixels" src="https://github.com/user-attachments/assets/13744b3e-9933-491e-90ed-75868ab2fde2" />
 
@@ -42,17 +43,18 @@ powers the interactive demos in the [Rustrak docs](https://rustrak.github.io/rus
 
 ## Embed a demo
 
-Unzip the bundle into your site and point the player at it:
+Put the `.openshowcase` file in your site's static files and point the player
+at it:
 
 ```tsx
 import { InteractiveDemo } from "@rustrak/openshowcase-player-react";
 
-<InteractiveDemo src="/demos/my-demo/steps.json" />;
+<InteractiveDemo src="/demos/my-demo.openshowcase" />;
 ```
 
 The Vue component, `@rustrak/openshowcase-player-vue`, takes the same props.
-Asset paths resolve relative to `steps.json`, so the bundle works from any
-folder. The React player is about 55 KB gzipped, React excluded.
+The file streams in one request, and each step shows as soon as its bytes
+arrive. An unzipped `.zip` works too: point `src` at its `steps.json`. The React player is about 55 KB gzipped, React excluded.
 
 <img width="2000" height="900" alt="embed" src="https://github.com/user-attachments/assets/52b8bed2-7fa6-43e7-a4ea-a7c06b0f919b" />
 

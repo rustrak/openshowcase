@@ -257,9 +257,6 @@ importers:
       '@rustrak/openshowcase-schema':
         specifier: workspace:*
         version: link:../../packages/schema
-      react:
-        specifier: '>=18'
-        version: 19.3.0
     devDependencies:
       '@rsbuild/plugin-react':
         specifier: 2.1.0
@@ -267,18 +264,39 @@ importers:
       '@rslib/core':
         specifier: catalog:tooling
         version: 1.0.1(@microsoft/api-extractor@7.59.2(@types/node@26.6.2))(typescript@7.0.2)
+      '@rustrak/openshowcase-exporter':
+        specifier: workspace:*
+        version: link:../../packages/exporter
       '@size-limit/file':
         specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
       '@types/react':
         specifier: catalog:react
         version: 19.3.0
+      '@types/react-dom':
+        specifier: catalog:react
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitest/browser-playwright':
+        specifier: catalog:tooling
+        version: 5.0.1(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
+      playwright:
+        specifier: catalog:tooling
+        version: 1.63.0
+      react:
+        specifier: catalog:react
+        version: 19.3.0
+      react-dom:
+        specifier: catalog:react
+        version: 19.3.0(react@19.3.0)
       size-limit:
         specifier: catalog:tooling
         version: 14.0.0
       typescript:
         specifier: catalog:core
         version: 7.0.2
+      vitest:
+        specifier: catalog:tooling
+        version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
 
   adapters/player-vue:
     dependencies:
@@ -295,18 +313,33 @@ importers:
       '@rslib/core':
         specifier: catalog:tooling
         version: 1.0.1(@microsoft/api-extractor@7.59.2(@types/node@26.6.2))(typescript@6.0.3)
+      '@rustrak/openshowcase-exporter':
+        specifier: workspace:*
+        version: link:../../packages/exporter
       '@size-limit/file':
         specifier: catalog:tooling
         version: 14.0.0(size-limit@14.0.0)
+      '@vitejs/plugin-vue':
+        specifier: 6.0.9
+        version: 6.0.9(vite@8.3.0(@types/node@26.6.2))(vue@3.5.43(typescript@6.0.3))
+      '@vitest/browser-playwright':
+        specifier: catalog:tooling
+        version: 5.0.1(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)
       '@vue/language-core':
         specifier: 3.3.11
         version: 3.3.11
+      playwright:
+        specifier: catalog:tooling
+        version: 1.63.0
       size-limit:
         specifier: catalog:tooling
         version: 14.0.0
       typescript:
         specifier: catalog:vue-tooling
         version: 6.0.3
+      vitest:
+        specifier: catalog:tooling
+        version: 5.0.1(@types/node@26.6.2)(@vitest/browser-playwright@5.0.1)(@vitest/ui@5.0.1)(vite@8.3.0(@types/node@26.6.2))
       vue:
         specifier: 3.5.43
         version: 3.5.43(typescript@6.0.3)
@@ -331,6 +364,9 @@ importers:
       '@dnd-kit/utilities':
         specifier: 3.2.2
         version: 3.2.2(react@19.3.0)
+      '@jsquash/avif':
+        specifier: 2.1.1
+        version: 2.1.1
       '@rustrak/openshowcase-exporter':
         specifier: workspace:*
         version: link:../../packages/exporter
@@ -1012,6 +1048,9 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
+  '@jsquash/avif@2.1.1':
+    resolution: {integrity: sha512-LMRxd0fMgfCLtobDh0/sFYJMMiRJTNYSEEWvRDKXlAeZ08t3gI5V+1thIT0XjXJ+SVG7Zug9B0XPyx0Ti5VRNA==}
+
   '@manypkg/find-root@3.1.0':
     resolution: {integrity: sha512-BcSqCyKhBVZ5YkSzOiheMCV41kqAFptW6xGqYSTjkVTl9XQpr+pqHhwgGCOHQtjDCv7Is6EFyA14Sm5GVbVABA==}
     engines: {node: '>=20.0.0'}
@@ -1655,6 +1694,13 @@ packages:
         optional: true
       oxc-transform-react:
         optional: true
+
+  '@vitejs/plugin-vue@6.0.9':
+    resolution: {integrity: sha512-rD/MORlhaZMlXWW0rEn4FB4wMinWC0z/D7Ye160S5+Rs1mC8ZDAdcDp4SjKfUhG5t8q1ktcPVw4xuTkPRlzrSA==}
+    engines: {node: ^20.19.0 || >=22.12.0}
+    peerDependencies:
+      vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
+      vue: ^3.2.25
 
   '@vitest/browser-playwright@5.0.1':
     resolution: {integrity: sha512-BlknN81ZeoCyP5CSm5u7+1BTlS7d0cDU5DfndNSjEC3SmbzOESGrp+DQpNhQmTlggawWc+yKVEM03mM/aBynqg==}
@@ -2933,6 +2979,9 @@ packages:
       typescript:
         optional: true
 
+  wasm-feature-detect@1.9.0:
+    resolution: {integrity: sha512-zonE+xlIIYtxPy++L24ow0hAD8CICb4+FgPyROd3buyXIqsJvUEDkBgfCCoXOd1Hu3DUr0GOfnPIdcGV+YpNaA==}
+
   webpack-virtual-modules@0.6.2:
     resolution: {integrity: sha512-66/V2i5hQanC51vBQKPH4aI8NMAcBW59FVBs+rC7eGHupMyfn34q7rZIE+ETlJ+XTevqfUhVVBgSUNSW2flEUQ==}
 
@@ -3411,6 +3460,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
+
+  '@jsquash/avif@2.1.1':
+    dependencies:
+      wasm-feature-detect: 1.9.0
 
   '@manypkg/find-root@3.1.0':
     dependencies:
@@ -3917,6 +3970,12 @@ snapshots:
     dependencies:
       '@rolldown/pluginutils': 1.0.1
       vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+
+  '@vitejs/plugin-vue@6.0.9(vite@8.3.0(@types/node@26.6.2))(vue@3.5.43(typescript@6.0.3))':
+    dependencies:
+      '@rolldown/pluginutils': 1.0.1
+      vite: 8.3.0(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vue: 3.5.43(typescript@6.0.3)
 
   '@vitest/browser-playwright@5.0.1(playwright@1.63.0)(vite@8.3.0(@types/node@26.6.2))(vitest@5.0.1)':
     dependencies:
@@ -5109,6 +5168,8 @@ snapshots:
       '@vue/shared': 3.5.43
     optionalDependencies:
       typescript: 6.0.3
+
+  wasm-feature-detect@1.9.0: {}
 
   webpack-virtual-modules@0.6.2: {}
 

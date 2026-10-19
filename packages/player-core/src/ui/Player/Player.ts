@@ -10,6 +10,7 @@ import {
   computeContainBox,
   IDENTITY_ZOOM_TRANSFORM,
 } from "../../core/geometry";
+import type { AssetResolver } from "../../core/load-demo";
 import {
   applyInheritedZoom,
   applyMediaZoom,
@@ -45,6 +46,8 @@ export interface PlayerViewOptions {
   demo: Demo;
   /** Prefix prepended to relative asset src (image/video), e.g. the bundle's base URL. */
   assetBaseUrl?: string;
+  /** Serves asset URLs instead of `assetBaseUrl`, e.g. from a single-file bundle. */
+  resolveAsset?: AssetResolver;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -97,6 +100,7 @@ function zoomTarget(layer: ReturnType<typeof layerState>): MediaZoomTarget {
 export function createPlayerView({
   demo,
   assetBaseUrl,
+  resolveAsset = (src) => resolveAssetUrl(src, assetBaseUrl),
   onStepChange,
 }: PlayerViewOptions): PlayerView {
   injectStyles(document, "player", css);
@@ -159,13 +163,14 @@ export function createPlayerView({
   });
 
   async function loadVideoAsset(src: string): Promise<void> {
-    const resolved = await loadVideoSrc(src, assetBaseUrl);
+    const resolved = await loadVideoSrc(await resolveAsset(src));
     videoObjectUrl = resolved.objectUrl;
     videoEl.src = resolved.src;
   }
 
+  // A video that fails to load leaves its steps blank rather than breaking the photo steps
   const videoReady: Promise<void> = demo.video
-    ? loadVideoAsset(demo.video.src)
+    ? loadVideoAsset(demo.video.src).catch(() => {})
     : Promise.resolve();
 
   /** On the last step, advancing means dismissing the overlays and settling on a clean view. */
@@ -303,10 +308,21 @@ export function createPlayerView({
     } else {
       overlay.hide();
     }
-    photo.src(resolveAssetUrl(step.image.src, assetBaseUrl));
-    photo.renderId(photo.renderId() + 1);
-    photo.alt(step.hotspot?.label ?? `Step ${index + 1}`);
+    const show = (src: string) =>
+      batch(() => {
+        photo.src(src);
+        photo.renderId(photo.renderId() + 1);
+        photo.alt(step.hotspot?.label ?? `Step ${index + 1}`);
+      });
     // the actual reveal happens in handlePhotoReady, once PhotoLayer's decode resolves
+    const src = resolveAsset(step.image.src);
+    if (typeof src === "string") show(src);
+    // Still downloading (a bundle): the previous view stays up until it arrives
+    else
+      src.then(
+        (url) => currentStepRef === step && show(url),
+        () => {},
+      );
   }
 
   /**

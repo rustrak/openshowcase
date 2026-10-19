@@ -38,7 +38,16 @@ WXT + React Chrome extension (MV3) with two jobs: **capture** (continuous tab vi
 - Pointer gestures keep a local draft and commit once on release (`lib/pointer-drag.ts`): one undo step per gesture, and no React re-render per pointer move.
 - The playhead and timecode write to the DOM directly from `hooks/use-clip-playback.ts`. The stage stays mounted in Preview because it owns the `<video>`.
 - `components/stage/player-visuals.css` + `HotspotLayer.tsx` mirror player-core's hotspot/tooltip look. Keep them in sync.
+- Export re-encodes the video: `core/video-clips.ts` plans the played ranges (merged, laid end to end with a 0.1s gap so non-contiguous clips stay non-contiguous for the player) and retimes the steps; `lib/export-video.ts` encodes them with Mediabunny, a key frame at each range start. Rate control is VBR (`core/video-encoding.ts`): a fixed quantizer made scrolling text pages huge (9.3 MB for 8.5s). Encoder order: software H.264 (OpenH264 honors `contentHint: "text"`; 3x smaller than macOS's hardware encoder on scrolling text) → hardware H.264 → software VP9 → the whole recording as is. Each segment's last frame lasts until the segment's end: a still screen sends no frames, and the video would otherwise end before its last step. `hooks/use-video-export.ts` caches the encode by ranges, so the size estimate and the download share it.
+- The editor's CSP adds `'wasm-unsafe-eval'` (`wxt.config.ts`): MV3's default forbids compiling WebAssembly, and without it the AVIF encoder silently falls back to WebP.
+- Photo frames are extracted lossless (PNG, `lib/extract-frame.ts`) and encoded once at export as AVIF (`core/photo-encoding.ts` picks the settings, higher quality for zoomed photos; `lib/export-images.ts` runs @jsquash/avif in a pool of module workers, cached per frame). The worker imports the single-threaded encoder directly: `@jsquash/avif/encode` would also bundle the multi-threaded build (+3.5 MB), unusable without cross-origin isolation. Measure image quality in a browser, not ffmpeg: ffmpeg misreads the AVIF's full-range colors.
+- The recording is a master: record at high quality (`offscreen/lib/recording-settings.ts`) and optimize at export. Photo steps come from the video, never from separate screenshots, because the editor converts steps between photo and video.
 - Manual testing without recording: serve `.output/chrome-mv3` over http, seed the `openshowcase` IndexedDB with a canvas-generated webm + markers, and open `editor.html?recordingId=…`. Chrome defers media in hidden tabs, so background screenshots show empty video.
+
+## Playground
+
+- `entrypoints/playground/`: plays an exported `.openshowcase`/`.zip` with the real player, loaded from the file like a site loads it, as large as the stage fits and on a light/dark site background. Opened from the export dialog ("Test it in the playground", which hands over the download's blob: URL, alive while the editor tab is) and from the popup header's icon. Not named `sandbox`: WXT reserves that name for manifest sandbox pages.
+- `core/inspect-bundle.ts` reads the file with player-core's `readStoredZip`, so a file it accepts is one the player loads, and a rejected one gets the player's reason.
 
 ## UI
 

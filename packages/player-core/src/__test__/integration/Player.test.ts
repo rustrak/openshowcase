@@ -44,6 +44,11 @@ describe("Player (mount.ts) integration", () => {
     document.body.append(container);
   });
 
+  const imageSources = () =>
+    [...container.querySelectorAll("img")].map((img) =>
+      img.getAttribute("src"),
+    );
+
   afterEach(() => {
     vi.restoreAllMocks();
     player?.destroy();
@@ -317,6 +322,73 @@ describe("Player (mount.ts) integration", () => {
 
     await vi.waitFor(() => expect(img.style.transform).toContain("scale(2)"));
     expect(transforms.some((t) => /scale\(1\)/.test(t))).toBe(false);
+  });
+
+  it("shows a photo served by resolveAsset once it arrives", async () => {
+    const demo = createDemo();
+    for (const step of demo.steps)
+      if (step.type === "photo") step.image.src = "assets/step.png";
+    let deliver!: (url: string) => void;
+    const resolveAsset = vi.fn(
+      () => new Promise<string>((resolve) => (deliver = resolve)),
+    );
+    player = new Player({ container, demo, resolveAsset });
+    player.mount();
+
+    await vi.waitFor(() =>
+      expect(resolveAsset).toHaveBeenCalledWith("assets/step.png"),
+    );
+    expect(container.querySelector('[aria-label="Hotspot"]')).toBeNull();
+
+    deliver(TINY_PNG);
+    await vi.waitFor(() =>
+      expect(container.querySelector('[aria-label="Hotspot"]')).not.toBeNull(),
+    );
+    expect(imageSources()).toContain(TINY_PNG);
+  });
+
+  it("plays the video served by resolveAsset", async () => {
+    const videoUrl = URL.createObjectURL(new Blob([], { type: "video/mp4" }));
+    const demo: Demo = {
+      ...createDemo(),
+      video: {
+        src: "assets/recording.mp4",
+        width: 800,
+        height: 600,
+        durationSec: 2,
+      },
+    };
+    const resolveAsset = vi.fn(async (src: string) =>
+      src === "assets/recording.mp4" ? videoUrl : TINY_PNG,
+    );
+    player = new Player({ container, demo, resolveAsset });
+    player.mount();
+
+    await vi.waitFor(() =>
+      expect(container.querySelector("video")?.getAttribute("src")).toBe(
+        videoUrl,
+      ),
+    );
+    URL.revokeObjectURL(videoUrl);
+  });
+
+  it("ignores a photo that arrives after its step was left", async () => {
+    const demo = createDemo();
+    const [first] = demo.steps;
+    if (first?.type === "photo") first.image.src = "assets/slow.png";
+    let deliverSlow!: (url: string) => void;
+    const resolveAsset = (src: string) =>
+      src === "assets/slow.png"
+        ? new Promise<string>((resolve) => (deliverSlow = resolve))
+        : src;
+    player = new Player({ container, demo, resolveAsset });
+    player.mount();
+
+    player.goTo(1);
+    await vi.waitFor(() => expect(imageSources()).toContain(TINY_PNG));
+    deliverSlow("data:image/png;base64,stale");
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(imageSources()).not.toContain("data:image/png;base64,stale");
   });
 
   it("destroys cleanly, leaving the container empty", async () => {

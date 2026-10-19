@@ -17,8 +17,8 @@ import { buildDemoBundle } from "@rustrak/openshowcase-exporter";
 
 const zip: Blob = await buildDemoBundle({
   demo,                  // a Demo (see @rustrak/openshowcase-schema)
-  imageBlobs,            // Map<stepId, Blob> with the frame of each photo step
-  videoBlob,             // the continuous recording (webm), only needed for video steps
+  imageBlobs,            // Map<stepId, Blob> with the frame of each photo step (AVIF ships as is, anything else becomes WebP)
+  videoBlob,             // the video the video steps play (webm or mp4), only needed for video steps
   imageQuality: 0.85,    // WebP quality, 0–1 (default 0.85)
 });
 ```
@@ -28,8 +28,8 @@ const zip: Blob = await buildDemoBundle({
 ```
 steps.json            # the demo, with asset paths rewritten to be relative
 assets/
-  step-1.webp         # one frame per photo step
-  recording.webm      # only if the demo has video steps
+  step-1.avif         # one frame per photo step (.webp when not given as AVIF)
+  recording.mp4       # only if the demo has video steps (.webm when the video is WebM)
 ```
 
 The bundle is pure data with no player inside. Render it with [`@rustrak/openshowcase-player-react`](https://github.com/rustrak/openshowcase/tree/main/adapters/player-react) or [`@rustrak/openshowcase-player-vue`](https://github.com/rustrak/openshowcase/tree/main/adapters/player-vue).

@@ -19,9 +19,9 @@ Each workspace has its own `CLAUDE.md` with its build, test and gotcha notes. Re
 
 - **Capture is video + screenshots, never DOM cloning.** Replaying a cloned DOM breaks cross-origin assets, fonts and CSS once the demo is embedded on another domain.
 - **The editor lives inside the extension.** There is no backend. Recordings live in IndexedDB, and export runs in the browser (JSZip + download).
-- **The exported bundle is pure data:** `steps.json` + `assets/*.webp` (photo frames) + `assets/recording.webm` (only if there are video steps). It never ships a player runtime. The player is an npm component in the host app (`player-react` / `player-vue`).
+- **The exported bundle is pure data:** `steps.json` + `assets/*.avif` (photo frames, encoded at export) + `assets/recording.mp4` (only if there are video steps: just the ranges they play, re-encoded at export; `.webm` if H.264 encoding is unavailable). It never ships a player runtime. The player is an npm component in the host app (`player-react` / `player-vue`).
 - **`packages/schema` is the single source of truth** for the demo format. Read `packages/schema/src/index.ts` for the current shape rather than trusting any copy of it.
-- Pipeline: `content.ts` markers + continuous tab video → `apps/extension/lib/segments.ts` derives steps (click → photo step with hotspot, activity between clicks → video clip) → editor → exporter → player.
+- Pipeline: `content.ts` markers + continuous tab video → `apps/extension/lib/segments.ts` derives steps (click → photo step with hotspot, activity between clicks → video clip) → editor → export (`editor/lib/export-video.ts` re-encodes the played ranges) → exporter → player.
 
 ## Conventions
 
