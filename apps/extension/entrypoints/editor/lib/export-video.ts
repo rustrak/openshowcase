@@ -5,7 +5,11 @@ import type {
   VideoSample,
 } from "mediabunny";
 import type { ClipSegment } from "../core/video-clips";
-import { lastFrameDuration, videoBitrate } from "../core/video-encoding";
+import {
+  lastFrameDuration,
+  videoBitrate,
+  videoQuantizer,
+} from "../core/video-encoding";
 
 type Mediabunny = typeof import("mediabunny");
 
@@ -16,7 +20,7 @@ interface EncoderChoice {
 }
 
 /**
- * Tried in order, all with bitrate rate control (see `core/video-encoding.ts`). H.264 in MP4
+ * Tried in order, all at constant quality (see `core/video-encoding.ts`). H.264 in MP4
  * is the only format every browser plays (VP9 needs iOS 17.4+). Software first: Chrome's
  * OpenH264 honors `contentHint: "text"` (screen-content mode) and, on a scrolling text page,
  * came out 3x smaller than macOS's hardware encoder at the same quality.
@@ -48,14 +52,13 @@ export async function encodeVideoClips(
     const width = track.displayWidth & ~1;
     const height = track.displayHeight & ~1;
 
-    const quality = new mb.Quality({
-      bitrate: videoBitrate({
-        width,
-        height,
-        zoomed: segments.some((segment) => segment.zoomed),
-      }),
-    });
+    const zoomed = segments.some((segment) => segment.zoomed);
+    const bitrate = videoBitrate({ width, height, zoomed });
     for (const choice of ENCODER_CHOICES) {
+      const quality = new mb.Quality({
+        quantizer: videoQuantizer({ codec: choice.codec, zoomed }),
+        bitrate,
+      });
       const supported = await mb.canEncodeVideo(choice.codec, {
         width,
         height,

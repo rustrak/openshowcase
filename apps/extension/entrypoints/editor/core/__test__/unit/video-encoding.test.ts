@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { lastFrameDuration, videoBitrate } from "../../video-encoding";
+import {
+  lastFrameDuration,
+  videoBitrate,
+  videoQuantizer,
+} from "../../video-encoding";
 
 describe("videoBitrate", () => {
-  it("gives a 2x capture of a typical tab about 6 Mbps", () => {
+  it("gives a 2x capture of a typical tab about 19 Mbps", () => {
     expect(videoBitrate({ width: 3000, height: 1790, zoomed: false })).toBe(
-      5_960_700,
+      19_332_000,
     );
   });
 
@@ -22,7 +26,20 @@ describe("videoBitrate", () => {
 
   it("caps huge captures", () => {
     expect(videoBitrate({ width: 7680, height: 4320, zoomed: true })).toBe(
-      12_000_000,
+      30_000_000,
+    );
+  });
+});
+
+describe("videoQuantizer", () => {
+  it("uses each codec's own scale", () => {
+    expect(videoQuantizer({ codec: "avc", zoomed: false })).toBe(22);
+    expect(videoQuantizer({ codec: "vp9", zoomed: false })).toBe(30);
+  });
+
+  it("raises quality when the player zooms into the video", () => {
+    expect(videoQuantizer({ codec: "avc", zoomed: true })).toBeLessThan(
+      videoQuantizer({ codec: "avc", zoomed: false }),
     );
   });
 });

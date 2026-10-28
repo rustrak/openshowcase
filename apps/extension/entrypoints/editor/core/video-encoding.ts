@@ -1,15 +1,30 @@
 /** Bits per pixel per frame at 30fps. Static UI costs far less: this budgets motion. */
-const BITS_PER_PIXEL = 0.037;
+const BITS_PER_PIXEL = 0.12;
 const ZOOM_FACTOR = 1.5;
-const MAX_BITRATE = 12_000_000;
+const MAX_BITRATE = 30_000_000;
 
 /**
- * Target bitrate (VBR) of the exported video. Measured on a 3000×1790@60 recording of a
- * GitHub page scrolling (the worst case: every frame is new text), against the recording:
- * - software H.264 at this rate (6 Mbps): VMAF 96.1, 3.2 MB for 8.5s;
- * - hardware H.264 at a fixed quantizer 22: VMAF ~97 but 9.3 MB, and quantizer 30 still
- *   5.7 MB. Rate control keeps motion affordable where a fixed quantizer can't.
- * Zoomed clips get more, since the player enlarges them.
+ * Constant-quality quantizer (like FFmpeg's CRF) of the exported video, on each codec's own
+ * scale (H.264 0–51, VP9 0–63). Constant quality keeps every frame equally sharp: static UI
+ * costs almost nothing and motion gets the bits it needs. A bitrate target instead smeared
+ * scrolls and transitions next to sharp still frames, a visible quality pumping. H.264 at 22
+ * measured VMAF ~97 against the recording on a scrolling GitHub page (the worst case).
+ * Zoomed clips get a lower one, since the player enlarges them.
+ */
+export function videoQuantizer({
+  codec,
+  zoomed,
+}: {
+  codec: "avc" | "vp9";
+  zoomed: boolean;
+}): number {
+  const base = codec === "avc" ? 22 : 30;
+  return zoomed ? base - 3 : base;
+}
+
+/**
+ * Fallback target bitrate (VBR) for encoders without quantizer support. Kept high (~19 Mbps
+ * for a 2x capture, near the recording master) so motion doesn't visibly degrade.
  */
 export function videoBitrate({
   width,
