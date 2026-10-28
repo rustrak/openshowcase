@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-player-core",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Framework-agnostic player for OpenShowcase interactive demos",
   "keywords": [
     "openshowcase",

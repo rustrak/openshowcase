@@ -1,5 +1,16 @@
 # @rustrak/openshowcase-extension
 
+## 0.4.1
+
+### Patch Changes
+
+- [`8069753`](https://github.com/rustrak/openshowcase/commit/80697536e660ea790b97d95a783dcef48df541b9) Thanks [@AbianS](https://github.com/AbianS)! - Export video clips at constant quality: motion no longer looks blurrier than still frames.
+- Updated dependencies []:
+  - @rustrak/openshowcase-player-react@0.4.1
+  - @rustrak/openshowcase-exporter@0.4.1
+  - @rustrak/openshowcase-player-core@0.4.1
+  - @rustrak/openshowcase-schema@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes

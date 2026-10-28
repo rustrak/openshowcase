@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-recorder",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "CLI that records an OpenShowcase demo by driving a headless Chromium through a scripted flow, for AI agents",
   "keywords": [
     "openshowcase",
