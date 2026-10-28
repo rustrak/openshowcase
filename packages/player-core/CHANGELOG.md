@@ -1,5 +1,12 @@
 # @rustrak/openshowcase-player-core
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @rustrak/openshowcase-schema@0.4.1
+
 ## 0.4.0
 
 ### Minor Changes
