@@ -1,5 +1,15 @@
 # @rustrak/openshowcase-extension
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies [[`a5d6601`](https://github.com/rustrak/openshowcase/commit/a5d66014b1dc0f8bb09eb842eddd6aab96f2795c)]:
+  - @rustrak/openshowcase-player-core@0.5.0
+  - @rustrak/openshowcase-player-react@0.5.0
+  - @rustrak/openshowcase-exporter@0.5.0
+  - @rustrak/openshowcase-schema@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes

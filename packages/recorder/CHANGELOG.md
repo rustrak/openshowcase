@@ -1,5 +1,12 @@
 # @rustrak/openshowcase-recorder
 
+## 0.5.0
+
+### Patch Changes
+
+- [`a5d6601`](https://github.com/rustrak/openshowcase/commit/a5d66014b1dc0f8bb09eb842eddd6aab96f2795c) Thanks [@AbianS](https://github.com/AbianS)! - - New `startWhenVisible` option/prop on the player: it shows its first step but holds playback (clip, zoom, hotspot) until it is at least half on screen, for demos below the fold or several on one page.
+  - Smoother cursor in recordings: mouse moves are paced by the clock instead of a fixed tick, so they no longer drop to 30fps and speed up mid-move while the page is still painting after a click, and the cursor keeps sub-pixel positions.
+
 ## 0.4.1
 
 No changes in this release.
