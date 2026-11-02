@@ -1,5 +1,12 @@
 # @rustrak/openshowcase-exporter
 
+## 0.5.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @rustrak/openshowcase-schema@0.5.0
+
 ## 0.4.1
 
 ### Patch Changes
