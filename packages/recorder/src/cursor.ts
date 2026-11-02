@@ -61,12 +61,14 @@ function cursorScript() {
     /* no previous position */
   }
 
-  addEventListener("mousemove", (e) => place(e.clientX, e.clientY), {
+  // pointermove, not mousemove: its coordinates keep sub-pixels (mousemove rounds them), so
+  // the slow start and stop of a move glide instead of stepping a whole pixel at a time.
+  addEventListener("pointermove", (e) => place(e.clientX, e.clientY), {
     capture: true,
     passive: true,
   });
   addEventListener(
-    "mousedown",
+    "pointerdown",
     (e) => {
       place(e.clientX, e.clientY);
       svg.animate(

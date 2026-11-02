@@ -1,7 +1,7 @@
 import type { Locator, Page } from "playwright";
 import type { Direction } from "./browser";
 import { describeStep, type Step, type Target } from "./flow";
-import { aimPoint, humanPath, MOVE_TICK_MS, type Point } from "./human";
+import { aimPoint, humanMove, type Point, playMove } from "./human";
 
 /** How things happen on camera. A recording should feel like a person; inspecting doesn't. */
 export interface Pace {
@@ -132,10 +132,11 @@ export async function runFlow(
       mouse = point;
       return;
     }
-    for (const p of humanPath(mouse, point, random)) {
-      await page.mouse.move(p.x, p.y);
-      await page.waitForTimeout(MOVE_TICK_MS);
-    }
+    await playMove(humanMove(mouse, point, random), {
+      now: () => performance.now(),
+      move: (p) => page.mouse.move(p.x, p.y),
+      wait: (ms) => page.waitForTimeout(ms),
+    });
     mouse = point;
   }
 

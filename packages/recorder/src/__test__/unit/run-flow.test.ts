@@ -188,6 +188,16 @@ describe("runFlow", () => {
     expect(x).toBeLessThan((box?.x ?? 0) + (box?.width ?? 0));
     expect(y).toBeGreaterThan(box?.y ?? Infinity);
     expect(y).toBeLessThan((box?.y ?? 0) + (box?.height ?? 0));
+
+    // Sub-pixel positions: whole pixels make a slow start or stop step instead of glide.
+    await camera.mouse.move(100.5, 200.25);
+    expect(
+      await camera.evaluate(
+        () =>
+          (document.querySelector("openshowcase-cursor") as HTMLElement).style
+            .transform,
+      ),
+    ).toBe("translate(100.5px, 200.25px)");
     await context.close();
   });
 
