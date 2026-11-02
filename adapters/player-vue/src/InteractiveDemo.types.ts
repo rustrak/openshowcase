@@ -21,5 +21,8 @@ export interface InteractiveDemoProps {
   /** Overrides the demo's light/dark appearance, e.g. to follow your site's mode,
    * or `"auto"` for the viewer's `prefers-color-scheme`. Changes apply live. */
   appearance?: PlayerAppearance;
+  /** Holds playback until the player is at least half on screen (shows its first step
+   * meanwhile), e.g. for a demo below the fold or several on one page. */
+  startWhenVisible?: boolean;
   onStepChange?: (index: number, step: Step) => void;
 }

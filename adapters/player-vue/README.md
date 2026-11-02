@@ -37,6 +37,7 @@ In SSR frameworks (Nuxt, etc.) render it client-side only (e.g. `<ClientOnly>`),
 | `assetBaseUrl` | `string` | Overrides the asset base URL inferred from `src`. |
 | `aspectRatio` | `number` | Width/height ratio used while the container has no explicit height. Defaults to `16 / 9`. |
 | `appearance` | `"light" \| "dark" \| "auto"` | Overrides the demo's light/dark appearance (browser frame, background, controls), e.g. to follow your site's mode; `"auto"` follows the viewer's `prefers-color-scheme`. Changes apply live, without restarting the demo. |
+| `startWhenVisible` | `boolean` | Holds playback (clip, zoom, hotspot) until the player is at least half on screen, showing its first step meanwhile. For a demo below the fold, or several on one page. Default `false`. Read at mount. |
 | `hotspotStyle` | `{ bgColor?: string; textColor?: string }` | Overrides every step's hotspot/tooltip colors, e.g. to force your brand color whatever the demo was recorded with. Changes apply live. |
 | `onStepChange` | `(index: number, step: Step) => void` | Called on every step change (also usable as `@step-change`). |
 

@@ -83,6 +83,7 @@ function mountPlayer(): void {
     resolveAsset: state.value.resolveAsset,
     hotspotStyle: props.hotspotStyle,
     appearance: props.appearance,
+    startWhenVisible: props.startWhenVisible,
     onStepChange: props.onStepChange,
   });
   player.mount();

@@ -185,6 +185,74 @@ describe("Player (mount.ts) integration", () => {
     expect(player.currentIndex).toBe(2);
   });
 
+  describe("startWhenVisible", () => {
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // Below the fold: the page has to scroll before the player is seen
+    beforeEach(() => {
+      container.style.marginTop = "3000px";
+      window.scrollTo(0, 0); // a previous test may have scrolled down to its player
+    });
+
+    it("holds a first video step until the player is on screen", async () => {
+      const play = vi
+        .spyOn(HTMLMediaElement.prototype, "play")
+        .mockResolvedValue();
+      player = new Player({
+        container,
+        startWhenVisible: true,
+        demo: {
+          id: "demo-v",
+          title: "Video first",
+          theme: { wrapper: "none", autoplay: false, appearance: "light" },
+          video: {
+            src: "data:video/webm;base64,",
+            width: 800,
+            height: 600,
+            durationSec: 2,
+          },
+          steps: [{ id: "clip", type: "video", startTime: 0, endTime: 1 }],
+        },
+      });
+      player.mount();
+
+      await sleep(300);
+      expect(play).not.toHaveBeenCalled();
+
+      container.scrollIntoView();
+      await vi.waitFor(() => expect(play).toHaveBeenCalled());
+    });
+
+    it("shows the first photo but reveals its hotspot only once on screen", async () => {
+      player = new Player({
+        container,
+        startWhenVisible: true,
+        demo: createDemo(),
+      });
+      player.mount();
+
+      await vi.waitFor(() => expect(imageSources()).toContain(TINY_PNG));
+      await sleep(300);
+      expect(container.querySelector('[aria-label="Hotspot"]')).toBeNull();
+
+      container.scrollIntoView();
+      await vi.waitFor(() =>
+        expect(
+          container.querySelector('[aria-label="Hotspot"]'),
+        ).not.toBeNull(),
+      );
+    });
+
+    it("starts right away without it, even off screen", async () => {
+      player = new Player({ container, demo: createDemo() });
+      player.mount();
+      await vi.waitFor(() =>
+        expect(
+          container.querySelector('[aria-label="Hotspot"]'),
+        ).not.toBeNull(),
+      );
+    });
+  });
+
   it("reveals the photo's hotspot again after seeking back to the video step before it", async () => {
     // no real clip to decode here: play() is stubbed and the video step is ended by hand
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();

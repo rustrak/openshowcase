@@ -43,6 +43,7 @@ loaded.dispose(); // stops the download and frees the bundle's asset URLs
 | `assetBaseUrl` | `string` | Prefix for relative image/video paths. |
 | `resolveAsset` | `(src) => string \| Promise<string>` | Serves asset URLs instead of `assetBaseUrl` (pass `loadDemo()`'s for a bundle). |
 | `appearance` | `"light" \| "dark" \| "auto"` | Overrides the demo's light/dark appearance (browser frame, background, controls), e.g. to follow your site's mode; `"auto"` follows the viewer's `prefers-color-scheme`. Changes apply live, without restarting the demo. |
+| `startWhenVisible` | `boolean` | Holds playback (clip, zoom, hotspot) until the player is at least half on screen, showing its first step meanwhile. For a demo below the fold, or several on one page. Default `false`. Read at mount. |
 | `hotspotStyle` | `{ bgColor?: string; textColor?: string }` | Overrides every step's hotspot/tooltip colors, e.g. to force your brand color whatever the demo was recorded with. Changes apply live. |
 | `onStepChange` | `(index, step) => void` | Called on every step change. |
 

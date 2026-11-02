@@ -57,8 +57,16 @@ export interface PlayerViewOptions {
   hotspotStyle?: HotspotStyle;
   /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode. */
   appearance?: PlayerAppearance;
+  /** Shows the first step but holds its playback (clip, zoom, hotspot) until the player
+   * is at least half on screen, e.g. for a demo below the fold. */
+  startWhenVisible?: boolean;
   onStepChange?: (index: number, step: Step) => void;
 }
+
+/** How much of the player must be on screen for `startWhenVisible` to start it. */
+// ponytail: a player over twice the viewport's height never gets there; measure the visible
+// height against the viewport instead if such embeds show up.
+const VISIBLE_RATIO = 0.5;
 
 export interface PlayerView {
   element: HTMLDivElement;
@@ -116,6 +124,7 @@ export function createPlayerView({
   resolveAsset = (src) => resolveAssetUrl(src, assetBaseUrl),
   hotspotStyle,
   appearance: appearanceOverride,
+  startWhenVisible = false,
   onStepChange,
 }: PlayerViewOptions): PlayerView {
   injectStyles(document, "player", css);
@@ -125,6 +134,14 @@ export function createPlayerView({
   const naturalHeight = demo.video?.height ?? firstPhoto?.image.height ?? 0;
 
   let index = 0;
+  // startWhenVisible: what moves waits here until the player is on screen (see start())
+  let onScreen = !startWhenVisible;
+  const heldUntilOnScreen: (() => void)[] = [];
+  const whenOnScreen = (fn: () => void) => {
+    if (onScreen) fn();
+    else heldUntilOnScreen.push(fn);
+  };
+  let visibility: IntersectionObserver | undefined;
   const appearance = signal(appearanceOverride);
   // Only read when the appearance is "auto"; the listener lives from start() to stop()
   const darkQuery = matchMedia("(prefers-color-scheme: dark)");
@@ -297,29 +314,32 @@ export function createPlayerView({
         if (currentStepRef !== step) return;
       }
       showVideoLayer();
-      videoWatchHandle = startVideoStep(
-        videoEl,
-        step,
-        // already positioned on the first frame (contiguous, or by whenAtTime above)
-        true,
-        {
-          onProgress: (progress) => {
-            segments(
-              segments().map((segment, i) =>
-                i === index ? { ...segment, progress } : segment,
-              ),
-            );
+      whenOnScreen(() => {
+        if (currentStepRef !== step) return;
+        videoWatchHandle = startVideoStep(
+          videoEl,
+          step,
+          // already positioned on the first frame (contiguous, or by whenAtTime above)
+          true,
+          {
+            onProgress: (progress) => {
+              segments(
+                segments().map((segment, i) =>
+                  i === index ? { ...segment, progress } : segment,
+                ),
+              );
+            },
+            onZoomOut: () => {
+              video.transform(IDENTITY_ZOOM_TRANSFORM);
+            },
+            onEnded: () => {
+              videoWatchHandle = undefined;
+              next();
+            },
           },
-          onZoomOut: () => {
-            video.transform(IDENTITY_ZOOM_TRANSFORM);
-          },
-          onEnded: () => {
-            videoWatchHandle = undefined;
-            next();
-          },
-        },
-        demo.steps[index + 1],
-      );
+          demo.steps[index + 1],
+        );
+      });
     });
   }
 
@@ -372,51 +392,60 @@ export function createPlayerView({
       video.visible(false);
       video.transform(IDENTITY_ZOOM_TRANSFORM);
       photo.visible(true);
-
-      const previousStep = previousStepRef;
-      // A zoomed photo right after a zoomed clip: the clip kept its zoom to the end (see
-      // handsZoomTo), so the photo picks up that framing and moves on to its own zoom from
-      // there instead of restarting from full frame.
-      if (
-        wasHidden &&
-        step.panZoom &&
-        previousStep &&
-        isVideoStep(previousStep) &&
-        previousStep.panZoom
-      ) {
-        applyInheritedZoom(
-          zoomTarget(photo),
-          previousStep.panZoom,
-          step.panZoom,
-          () => currentStepRef === step,
-        );
-      } else {
-        applyMediaZoom(
-          zoomTarget(photo),
-          step.panZoom,
-          wasHidden,
-          () => currentStepRef === step,
-        );
-      }
-
-      const anchor = step.hotspot
-        ? computeAnchor(step, step.hotspot)
-        : undefined;
-      // The hotspot/tooltip are positioned at their POST-zoom coordinates (see
-      // computeAnchorPoint) but aren't part of the image's own transform, so they can't
-      // visually "ride along" with a pan-zoom in progress — revealing them only once the zoom
-      // has settled avoids the mismatch.
-      const revealDelayMs = step.panZoom
-        ? ZOOM_ANIMATION_DELAY_MS + resolveTiming(step.panZoom).ms
-        : isZoomingOut
-          ? resolveTiming(undefined).ms
-          : 0;
-      setTimeout(() => {
-        if (currentStepRef !== step) return;
-        overlay.reveal(step.hotspot, anchor, () => currentStepRef === step);
-      }, revealDelayMs);
+      whenOnScreen(() => {
+        if (currentStepRef === step)
+          batch(() => playPhotoStep(step, wasHidden, isZoomingOut));
+      });
     });
     preSeekNextVideoStep();
+  }
+
+  /** A shown photo's motion: its zoom, then its hotspot and tooltip once the zoom settles. */
+  function playPhotoStep(
+    step: PhotoStep,
+    wasHidden: boolean,
+    isZoomingOut: boolean,
+  ): void {
+    const previousStep = previousStepRef;
+    // A zoomed photo right after a zoomed clip: the clip kept its zoom to the end (see
+    // handsZoomTo), so the photo picks up that framing and moves on to its own zoom from
+    // there instead of restarting from full frame.
+    if (
+      wasHidden &&
+      step.panZoom &&
+      previousStep &&
+      isVideoStep(previousStep) &&
+      previousStep.panZoom
+    ) {
+      applyInheritedZoom(
+        zoomTarget(photo),
+        previousStep.panZoom,
+        step.panZoom,
+        () => currentStepRef === step,
+      );
+    } else {
+      applyMediaZoom(
+        zoomTarget(photo),
+        step.panZoom,
+        wasHidden,
+        () => currentStepRef === step,
+      );
+    }
+
+    const anchor = step.hotspot ? computeAnchor(step, step.hotspot) : undefined;
+    // The hotspot/tooltip are positioned at their POST-zoom coordinates (see
+    // computeAnchorPoint) but aren't part of the image's own transform, so they can't
+    // visually "ride along" with a pan-zoom in progress — revealing them only once the zoom
+    // has settled avoids the mismatch.
+    const revealDelayMs = step.panZoom
+      ? ZOOM_ANIMATION_DELAY_MS + resolveTiming(step.panZoom).ms
+      : isZoomingOut
+        ? resolveTiming(undefined).ms
+        : 0;
+    setTimeout(() => {
+      if (currentStepRef !== step) return;
+      overlay.reveal(step.hotspot, anchor, () => currentStepRef === step);
+    }, revealDelayMs);
   }
 
   function preSeekNextVideoStep(): void {
@@ -551,6 +580,19 @@ export function createPlayerView({
       resizeObserver = new ResizeObserver(() => layoutOverlay());
       resizeObserver.observe(element);
       darkQuery.addEventListener("change", onSchemeChange);
+      if (!onScreen) {
+        visibility = new IntersectionObserver(
+          (entries) => {
+            if (!entries.some((e) => e.intersectionRatio >= VISIBLE_RATIO))
+              return;
+            onScreen = true;
+            visibility?.disconnect();
+            for (const fn of heldUntilOnScreen.splice(0)) fn();
+          },
+          { threshold: VISIBLE_RATIO },
+        );
+        visibility.observe(element);
+      }
     },
     stop() {
       videoEl.pause();
@@ -558,6 +600,7 @@ export function createPlayerView({
       overlay.dispose();
       if (videoObjectUrl) URL.revokeObjectURL(videoObjectUrl);
       resizeObserver?.disconnect();
+      visibility?.disconnect();
       darkQuery.removeEventListener("change", onSchemeChange);
       clearTimeout(navTimer);
     },

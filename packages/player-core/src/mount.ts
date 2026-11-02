@@ -20,6 +20,9 @@ export interface PlayerOptions {
   /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode, or
    * `"auto"` to follow the viewer's `prefers-color-scheme`. */
   appearance?: PlayerAppearance;
+  /** Holds playback until the player is at least half on screen (shows its first step
+   * meanwhile), e.g. for a demo below the fold or several on one page. */
+  startWhenVisible?: boolean;
   onStepChange?: (index: number, step: Step) => void;
 }
 
@@ -45,6 +48,7 @@ export class Player {
       resolveAsset,
       hotspotStyle,
       appearance,
+      startWhenVisible,
       onStepChange,
     } = this.options;
     let view!: PlayerView;
@@ -55,6 +59,7 @@ export class Player {
         resolveAsset,
         hotspotStyle,
         appearance,
+        startWhenVisible,
         onStepChange,
       });
       return view.element;
