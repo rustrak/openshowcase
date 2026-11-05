@@ -1,6 +1,6 @@
 {
   "name": "@rustrak/openshowcase-schema",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "Valibot schema and TypeScript types for the OpenShowcase interactive demo format",
   "keywords": [
     "openshowcase",
