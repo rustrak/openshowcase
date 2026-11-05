@@ -137,7 +137,7 @@ export const css = `
   inset: 0 auto 0 0;
   width: 0%;
   border-radius: inherit;
-  background: var(--wd-accent, #fff);
+  background-color: var(--wd-accent, #fff);
   /* fills and empties on a step change instead of snapping */
   transition:
     width 260ms cubic-bezier(0.2, 0, 0, 1),

@@ -26,17 +26,39 @@ describe("Tooltip", () => {
     expect(el.classList.contains("tooltip--side-bottom")).toBe(true);
   });
 
+  it("splits the text into staggered words, reading the same", async () => {
+    const screen = await render({
+      anchor: { left: 100, top: 100 },
+      stageSize,
+      visible: true,
+      text: "Open  the issue",
+    });
+    const el = screen.getByText("Open the issue").element() as HTMLElement;
+
+    const words = [...el.querySelectorAll<HTMLElement>(".tip-word")];
+    expect(words.map((word) => word.textContent)).toEqual([
+      "Open",
+      "the",
+      "issue",
+    ]);
+    expect(words[2]?.style.getPropertyValue("--wd-i")).toBe("2");
+    expect(el.textContent).toBe("Open  the issue");
+    expect(getComputedStyle(words[0] as HTMLElement).animationName).toBe(
+      "openshowcase-tip-word",
+    );
+  });
+
   it("flips to the top side when there is no room below the anchor", async () => {
     const screen = await render({
       anchor: { left: 100, top: 295 },
       stageSize,
       visible: true,
-      text: "Hi",
+      text: "Hi there",
     });
     await vi.waitFor(() =>
       expect(
         screen
-          .getByText("Hi")
+          .getByText("Hi there")
           .element()
           .classList.contains("tooltip--side-top"),
       ).toBe(true),
@@ -48,12 +70,12 @@ describe("Tooltip", () => {
       anchor: { left: 0, top: 0 },
       stageSize,
       visible: false,
-      text: "Hi",
+      text: "Hi there",
     });
     expect(
-      (screen.getByText("Hi").element() as HTMLElement).classList.contains(
-        "tooltip--visible",
-      ),
+      (
+        screen.getByText("Hi there").element() as HTMLElement
+      ).classList.contains("tooltip--visible"),
     ).toBe(false);
   });
 
@@ -65,10 +87,10 @@ describe("Tooltip", () => {
       anchor: { left: 0, top: 0 },
       stageSize,
       visible: true,
-      text: "Hi",
+      text: "Hi there",
       onhoverchange,
     });
-    const el = screen.getByText("Hi");
+    const el = screen.getByText("Hi there");
 
     await el.hover();
     expect(onhoverchange).toHaveBeenLastCalledWith(true);
@@ -77,19 +99,61 @@ describe("Tooltip", () => {
     expect(onhoverchange).toHaveBeenLastCalledWith(false);
   });
 
-  it("applies the hover class when the parent sets the hovered prop", async () => {
+  it("has a footer with the demo's progress, only when told the step", async () => {
     const screen = await render({
-      anchor: { left: 0, top: 0 },
+      anchor: { left: 100, top: 100 },
       stageSize,
       visible: true,
-      text: "Hi",
-      hovered: true,
+      text: "Hi there",
     });
-    expect(
-      (screen.getByText("Hi").element() as HTMLElement).classList.contains(
-        "tooltip--hover",
-      ),
-    ).toBe(true);
+    const part = (selector: string) =>
+      screen.container.querySelector<HTMLElement>(selector);
+    expect(part(".tip-foot")).toBeNull();
+
+    await screen.rerender({
+      anchor: { left: 100, top: 100 },
+      stageSize,
+      visible: true,
+      text: "Hi there",
+      step: { current: 1, total: 4 },
+    });
+    expect(part(".tip-count")?.textContent).toBe("1/4");
+    expect(part(".tip-bar-fill")?.style.width).toBe("25%");
+    expect(part(".tip-go svg")).not.toBeNull();
+  });
+
+  it("doesn't move on hover, only when pressed", async () => {
+    const screen = await render({
+      anchor: { left: 100, top: 100 },
+      stageSize,
+      visible: true,
+      text: "Hi there",
+      onhoverchange: vi.fn(),
+    });
+    const el = screen.getByText("Hi there");
+    await vi.waitFor(() =>
+      expect(getComputedStyle(el.element()).scale).toBe("1"),
+    );
+
+    await el.hover();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect(getComputedStyle(el.element()).scale).toBe("1");
+  });
+
+  it("keeps a demo's colors from adding other styles", async () => {
+    const evil = "red; background: url(https://example.com/x)";
+    const screen = await render({
+      anchor: { left: 100, top: 100 },
+      stageSize,
+      visible: true,
+      text: "Hi there",
+      bgColor: evil,
+      textColor: evil,
+    });
+    const el = screen.getByText("Hi there").element() as HTMLElement;
+
+    expect(el.getAttribute("style") ?? "").not.toContain("url(");
+    expect(screen.container.innerHTML).not.toContain("url(https://");
   });
 
   it("calls onclick when clicked", async () => {
@@ -98,11 +162,11 @@ describe("Tooltip", () => {
       anchor: { left: 0, top: 0 },
       stageSize,
       visible: true,
-      text: "Hi",
+      text: "Hi there",
       onclick,
     });
 
-    await screen.getByText("Hi").click();
+    await screen.getByText("Hi there").click();
 
     expect(onclick).toHaveBeenCalledTimes(1);
   });
@@ -112,15 +176,15 @@ describe("Tooltip", () => {
       anchor: { left: 100, top: 100 },
       stageSize,
       visible: true,
-      text: "First",
+      text: "First text",
     };
     const screen = await render(props);
-    const el = screen.getByText("First").element() as HTMLElement;
+    const el = screen.getByText("First text").element() as HTMLElement;
 
-    await screen.rerender({ ...props, visible: false, text: "Second" });
-    expect(el.textContent).toBe("First");
+    await screen.rerender({ ...props, visible: false, text: "Second text" });
+    expect(el.textContent).toBe("First text");
 
-    await vi.waitFor(() => expect(el.textContent).toBe("Second"));
+    await vi.waitFor(() => expect(el.textContent).toBe("Second text"));
     expect(el.classList.contains("tooltip--visible")).toBe(false);
   });
 });

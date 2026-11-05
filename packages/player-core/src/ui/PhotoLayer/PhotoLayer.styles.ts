@@ -68,21 +68,51 @@ export const css = `
   border-radius: 50%;
   border: 2px solid var(--openshowcase-color);
   pointer-events: none;
-  animation: openshowcase-hotspot-burst 450ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation: openshowcase-hotspot-burst 420ms cubic-bezier(0, 0, 0.2, 1) forwards;
 }
 @keyframes openshowcase-hotspot-burst {
   from {
-    scale: 0.4;
-    opacity: 0.7;
+    scale: 0.5;
+    opacity: 1;
   }
   to {
-    scale: 2.4;
+    scale: 2.6;
+    opacity: 0;
+    border-width: 0.5px;
+  }
+}
+
+/* What the hotspot leaves behind as it glides: a stroke drawn from where it was, its tail
+   catching up on arrival. Pivots on its start, so it runs straight to the hotspot. */
+.openshowcase-player .trail {
+  position: absolute;
+  z-index: 2;
+  height: calc(var(--wd-u, 14px) * 0.4);
+  transform-origin: 0 50%;
+  translate: 0 -50%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--openshowcase-color));
+  pointer-events: none;
+  animation: openshowcase-hotspot-trail 620ms cubic-bezier(0.3, 0, 0.2, 1) forwards;
+}
+@keyframes openshowcase-hotspot-trail {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0.9;
+  }
+  55% {
+    clip-path: inset(0 0 0 0);
+    opacity: 0.9;
+  }
+  100% {
+    clip-path: inset(0 0 0 100%);
     opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .openshowcase-player .burst {
+  .openshowcase-player .burst,
+  .openshowcase-player .trail {
     display: none;
   }
   .openshowcase-player .spotlight {

@@ -17,6 +17,8 @@ import type { StageTool } from "./StageToolbar";
 
 interface StageProps {
   step: EditableStep | undefined;
+  /** Where it is in the demo, shown in the tooltip's footer like the player does. */
+  stepPosition: { current: number; total: number };
   theme: Theme;
   title: string;
   aspectRatio: number;
@@ -41,6 +43,7 @@ const PAD_BOTTOM = 84;
  */
 export function Stage({
   step,
+  stepPosition,
   theme,
   title,
   aspectRatio,
@@ -169,6 +172,7 @@ export function Stage({
                       <HotspotLayer
                         key={`hotspot-${step?.id}`}
                         hotspot={hotspot}
+                        stepPosition={stepPosition}
                         editable={tool === "hotspot"}
                         mediaRef={mediaRef}
                         mediaSize={media}

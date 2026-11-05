@@ -43,77 +43,52 @@ export const css = `
   transition-duration: 120ms;
 }
 
-.openshowcase-player .halo,
-.openshowcase-player .ripple,
+.openshowcase-player .pulse,
+.openshowcase-player .ring,
 .openshowcase-player .core {
   position: absolute;
   border-radius: 50%;
   pointer-events: none;
 }
 
-.openshowcase-player .halo {
-  width: calc(var(--wd-u, 14px) * 2);
-  height: calc(var(--wd-u, 14px) * 2);
-  background: color-mix(in srgb, var(--openshowcase-color) 22%, transparent);
-  transition:
-    background-color 250ms ease,
-    scale 420ms var(--wd-spring-pop, ease-out);
+/* The dark hairlines keep it legible on light and dark screenshots alike */
+.openshowcase-player .ring {
+  width: calc(var(--wd-u, 14px) * 1.9);
+  height: calc(var(--wd-u, 14px) * 1.9);
+  border: 2px solid var(--openshowcase-color);
+  box-shadow:
+    0 0 0 1px rgb(0 0 0 / 0.25),
+    inset 0 0 0 1px rgb(0 0 0 / 0.18);
+  animation: openshowcase-hotspot-ring 2.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
-.openshowcase-player .hotspot--hover .halo {
-  background: color-mix(in srgb, var(--openshowcase-color) 32%, transparent);
-  scale: 1.1;
-}
-
-.openshowcase-player .ripple {
-  width: calc(var(--wd-u, 14px) * 2.25);
-  height: calc(var(--wd-u, 14px) * 2.25);
-  border: 1.5px solid color-mix(in srgb, var(--openshowcase-color) 70%, transparent);
-  background: radial-gradient(
-    circle,
-    transparent 40%,
-    color-mix(in srgb, var(--openshowcase-color) 30%, transparent) 100%
-  );
+.openshowcase-player .pulse {
+  width: calc(var(--wd-u, 14px) * 1.9);
+  height: calc(var(--wd-u, 14px) * 1.9);
+  border: 1.5px solid var(--openshowcase-color);
   opacity: 0;
-  animation: openshowcase-hotspot-ripple 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+  animation: openshowcase-hotspot-pulse 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
-.openshowcase-player .ripple--late {
-  animation-delay: 0.9s;
-}
-.openshowcase-player .hotspot--hover .ripple {
-  animation-play-state: paused;
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
 .openshowcase-player .core {
-  width: calc(var(--wd-u, 14px) * 1.125);
-  height: calc(var(--wd-u, 14px) * 1.125);
-  /* same relief language as the tooltip: a small specular glint top-left over a
-     top-lit gradient */
-  background:
-    radial-gradient(circle at 34% 28%, rgb(255 255 255 / 0.55), transparent 42%),
-    linear-gradient(
-      180deg,
-      color-mix(in oklab, var(--openshowcase-color) 85%, white),
-      var(--openshowcase-color) 55%,
-      color-mix(in oklab, var(--openshowcase-color) 90%, black)
-    );
-  box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 3px rgb(0 0 0 / 0.22),
-    0 2px 6px rgb(0 0 0 / 0.28);
-  animation: openshowcase-hotspot-breathe 1.8s ease-in-out infinite;
+  width: calc(var(--wd-u, 14px) * 0.62);
+  height: calc(var(--wd-u, 14px) * 0.62);
+  background-color: var(--openshowcase-color);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.22);
+  transition: scale 160ms ease;
 }
-.openshowcase-player .hotspot--hover .core {
+.openshowcase-player .hotspot:active .core {
+  scale: 0.7;
+}
+.openshowcase-player .hotspot--hover .ring {
   animation-play-state: paused;
 }
+.openshowcase-player .hotspot--hover .pulse {
+  animation: none;
+}
 
-.openshowcase-player .hotspot:focus-visible .core {
+.openshowcase-player .hotspot:focus-visible .ring {
   box-shadow:
-    0 0 0 2px #fff,
-    0 0 0 3px rgb(0 0 0 / 0.22),
-    0 0 0 6px color-mix(in srgb, var(--openshowcase-color) 55%, transparent),
-    0 2px 6px rgb(0 0 0 / 0.28);
+    0 0 0 1px rgb(0 0 0 / 0.25),
+    0 0 0 4px color-mix(in srgb, var(--openshowcase-color) 55%, transparent);
 }
 
 @keyframes openshowcase-hotspot-pop {
@@ -126,45 +101,33 @@ export const css = `
     opacity: 1;
   }
 }
-@keyframes openshowcase-hotspot-ripple {
-  0% {
-    scale: 0.5;
-    opacity: 0;
-  }
-  15% {
-    opacity: 0.6;
-  }
-  100% {
-    scale: 1.7;
-    opacity: 0;
+@keyframes openshowcase-hotspot-ring {
+  50% {
+    scale: 0.86;
   }
 }
-@keyframes openshowcase-hotspot-breathe {
+@keyframes openshowcase-hotspot-pulse {
   0%,
-  100% {
+  20% {
     scale: 1;
+    opacity: 0.7;
   }
-  50% {
-    scale: 0.88;
+  100% {
+    scale: 2;
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .openshowcase-player .hotspot,
-.openshowcase-player .dot,
-.openshowcase-player .halo {
+  .openshowcase-player .dot,
+  .openshowcase-player .core {
     transition: none;
   }
   .openshowcase-player .hotspot--appear .dot,
-.openshowcase-player .core {
+  .openshowcase-player .ring,
+  .openshowcase-player .pulse {
     animation: none;
-  }
-  .openshowcase-player .ripple {
-    animation: none;
-    opacity: 0;
-  }
-  .openshowcase-player .halo {
-    background: color-mix(in srgb, var(--openshowcase-color) 35%, transparent);
   }
 }
 `;

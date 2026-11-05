@@ -22,6 +22,7 @@ import { startPointerDrag } from "../../lib/pointer-drag";
 
 interface HotspotLayerProps {
   hotspot: Hotspot | undefined;
+  stepPosition: { current: number; total: number };
   /** The hotspot layer is the active tool: click to place, drag to move. */
   editable: boolean;
   mediaRef: RefObject<HTMLDivElement | null>;
@@ -30,12 +31,13 @@ interface HotspotLayerProps {
 }
 
 /**
- * The hotspot as the player will draw it (hollow pulsing ring + tooltip bubble), editable
+ * The hotspot as the player will draw it (breathing ring + tooltip card), editable
  * in place. Drags are local until release, so a drag is one undo step and doesn't
  * re-render the whole editor on every pointer move.
  */
 export function HotspotLayer({
   hotspot,
+  stepPosition,
   editable,
   mediaRef,
   mediaSize,
@@ -139,7 +141,11 @@ export function HotspotLayer({
       )}
 
       {shown?.label && !dragging && (
-        <TooltipBubble hotspot={shown} mediaSize={mediaSize} />
+        <TooltipBubble
+          hotspot={shown}
+          stepPosition={stepPosition}
+          mediaSize={mediaSize}
+        />
       )}
 
       {shown && (
@@ -170,9 +176,8 @@ export function HotspotLayer({
         >
           {/* Same anatomy as the player's hotspot (player-core ui/Hotspot/Hotspot.ts) */}
           <span className="wd-dot">
-            <span className="wd-halo" />
-            <span className="wd-ripple" />
-            <span className="wd-ripple wd-ripple--late" />
+            <span className="wd-pulse" />
+            <span className="wd-ring" />
             <span className="wd-core" />
           </span>
         </button>
@@ -183,9 +188,11 @@ export function HotspotLayer({
 
 function TooltipBubble({
   hotspot,
+  stepPosition,
   mediaSize,
 }: {
   hotspot: Hotspot;
+  stepPosition: { current: number; total: number };
   mediaSize: { width: number; height: number };
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -201,7 +208,7 @@ function TooltipBubble({
     const el = ref.current;
     if (!el) return;
     // Same placement rules and gap as the player (--wd-u recovered from the font size it drives).
-    const unit = Number.parseFloat(getComputedStyle(el).fontSize) / 0.875 || 14;
+    const unit = Number.parseFloat(getComputedStyle(el).fontSize) / 0.92 || 14;
     setLayout({
       width: el.offsetWidth,
       height: el.offsetHeight,
@@ -226,7 +233,7 @@ function TooltipBubble({
     ? bubblePath({
         width: layout.width,
         height: layout.height,
-        radius: layout.unit * 0.65,
+        radius: layout.unit * 0.95,
         side: layout.placement.side,
         tailOffset: layout.placement.arrowOffset,
         tail: {
@@ -247,6 +254,7 @@ function TooltipBubble({
       style={
         {
           color: hotspot.textColor ?? defaultHotspotStyle.textColor,
+          "--wd-tip-bg": bg,
           left: placement?.left ?? 0,
           top: placement?.top ?? 0,
           visibility: placement ? "visible" : "hidden",
@@ -265,30 +273,19 @@ function TooltipBubble({
             <linearGradient id={`${uid}-fill`} x1="0" y1="0" x2="0" y2="1">
               <stop
                 offset="0"
-                style={{ stopColor: `color-mix(in oklab, ${bg} 86%, white)` }}
+                style={{ stopColor: `color-mix(in oklab, ${bg} 94%, white)` }}
               />
-              <stop offset="0.5" style={{ stopColor: bg }} />
-              <stop
-                offset="1"
-                style={{ stopColor: `color-mix(in oklab, ${bg} 92%, black)` }}
-              />
+              <stop offset="1" style={{ stopColor: bg }} />
             </linearGradient>
-            <radialGradient id={`${uid}-sheen`} cx="0.1" cy="-0.35" r="1">
-              <stop offset="0" stopColor="#fff" stopOpacity="0.26" />
-              <stop offset="0.6" stopColor="#fff" stopOpacity="0" />
-            </radialGradient>
             <linearGradient id={`${uid}-rim`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#fff" stopOpacity="0.5" />
-              <stop offset="0.4" stopColor="#fff" stopOpacity="0" />
-              <stop offset="0.8" stopColor="#000" stopOpacity="0" />
-              <stop offset="1" stopColor="#000" stopOpacity="0.1" />
+              <stop offset="0" stopColor="#fff" stopOpacity="0.45" />
+              <stop offset="0.25" stopColor="#fff" stopOpacity="0" />
             </linearGradient>
             <clipPath id={`${uid}-clip`}>
               <path d={d} />
             </clipPath>
           </defs>
           <path d={d} fill={`url(#${uid}-fill)`} />
-          <path d={d} fill={`url(#${uid}-sheen)`} />
           <path
             d={d}
             className="wd-rim"
@@ -299,6 +296,24 @@ function TooltipBubble({
         </svg>
       )}
       {hotspot.label}
+      <div className="wd-tip-foot">
+        <span className="wd-tip-count">
+          {stepPosition.current}/{stepPosition.total}
+        </span>
+        <span className="wd-tip-bar">
+          <span
+            className="wd-tip-bar-fill"
+            style={{
+              width: `${(stepPosition.current / stepPosition.total) * 100}%`,
+            }}
+          />
+        </span>
+        <span className="wd-tip-go">
+          <svg viewBox="0 0 16 16" aria-hidden="true">
+            <path d="M3.5 8h9M8.5 4l4 4-4 4" />
+          </svg>
+        </span>
+      </div>
     </div>
   );
 }

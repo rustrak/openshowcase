@@ -47,6 +47,8 @@ export interface PhotoLayerProps {
 const CROSSFADE_MS = 220;
 /** Spotlight fade-out length. Must match `.spotlight--leaving` in PhotoLayer.styles.ts. */
 const LIGHT_OUT_MS = 500;
+/** Trail length, plus a margin. Must cover `.trail` in PhotoLayer.styles.ts. */
+const TRAIL_MS = 640;
 
 interface Light {
   id: number;
@@ -60,6 +62,11 @@ interface Burst {
   left: number;
   top: number;
   color: string;
+}
+
+interface Trail extends Burst {
+  length: number;
+  angle: number;
 }
 
 /** The stage's photo layers — siblings of the video layer and the navbar, so it returns a fragment. */
@@ -218,6 +225,38 @@ export function PhotoLayer(
     props.onHotspotAdvance?.();
   }
 
+  // A hotspot gliding to its next step leaves a trail. An instant move (a resize, or the jump
+  // to where a glide starts from) doesn't.
+  const trails = signal<Trail[]>([]);
+  let trailId = 0;
+  let lastPoint: { left: number; top: number } | undefined;
+  effect(() => {
+    const hotspot = props.hotspot?.();
+    untracked(() => {
+      if (
+        hotspot &&
+        lastPoint &&
+        !hotspot.instant &&
+        (hotspot.left !== lastPoint.left || hotspot.top !== lastPoint.top)
+      ) {
+        const dx = hotspot.left - lastPoint.left;
+        const dy = hotspot.top - lastPoint.top;
+        const trail = {
+          id: ++trailId,
+          ...lastPoint,
+          length: Math.hypot(dx, dy),
+          angle: Math.atan2(dy, dx),
+          color: hotspot.color,
+        };
+        trails([...trails(), trail]);
+        setTimeout(() => {
+          trails(trails().filter((t) => t.id !== trail.id));
+        }, TRAIL_MS);
+      }
+      lastPoint = hotspot && { left: hotspot.left, top: hotspot.top };
+    });
+  });
+
   // Leaving views keep their last values while they play their exit.
   const lastPrevious = latest(() => previous() ?? undefined);
   const lastHotspot = latest(() => props.hotspot?.());
@@ -251,6 +290,20 @@ export function PhotoLayer(
             `--wd-spot-x: ${light().left}px; --wd-spot-y: ${light().top}px;`,
         }),
     ),
+    each(
+      () => trails(),
+      (trail) => trail.id,
+      (trail) => {
+        const { left, top, length, angle, color } = trail();
+        const el = h("span", {
+          class: "trail",
+          style: `left: ${left}px; top: ${top}px; width: ${length}px; rotate: ${angle}rad;`,
+        });
+        // A custom property, not the style attribute: a demo's color can't add declarations
+        el.style.setProperty("--openshowcase-color", color);
+        return el;
+      },
+    ),
     show(
       () => props.visible() && props.hotspot?.(),
       () =>
@@ -269,12 +322,16 @@ export function PhotoLayer(
     each(
       () => bursts(),
       (burst) => burst.id,
-      (burst) =>
-        h("span", {
+      (burst) => {
+        const { left, top, color } = burst();
+        const el = h("span", {
           class: "burst",
-          style: () =>
-            `left: ${burst().left}px; top: ${burst().top}px; --openshowcase-color: ${burst().color};`,
-        }),
+          style: `left: ${left}px; top: ${top}px;`,
+        });
+        // A custom property, not the style attribute: a demo's color can't add declarations
+        el.style.setProperty("--openshowcase-color", color);
+        return el;
+      },
     ),
     show(
       () => props.visible() && props.tooltip?.(),
@@ -287,7 +344,7 @@ export function PhotoLayer(
           text: () => lastTooltip().text,
           bgColor: () => lastTooltip().bgColor,
           textColor: () => lastTooltip().textColor,
-          hovered: () => hovered(),
+          step: () => lastTooltip().step,
           onclick: advance,
           onhoverchange: (value) => hovered(value),
         }),

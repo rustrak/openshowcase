@@ -203,7 +203,13 @@ export function createPlayerView({
   const overlay = new PhotoOverlayController(
     {
       setHotspot: (hotspot) => photo.hotspot(hotspot),
-      setTooltip: (tooltip) => photo.tooltip(tooltip),
+      setTooltip: (tooltip) =>
+        photo.tooltip(
+          tooltip && {
+            ...tooltip,
+            step: { current: index + 1, total: demo.steps.length },
+          },
+        ),
       showTooltip: () => {
         const tooltip = photo.tooltip();
         if (tooltip) photo.tooltip({ ...tooltip, visible: true });

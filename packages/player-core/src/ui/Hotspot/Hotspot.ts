@@ -1,4 +1,5 @@
 import { cx, h, type ViewProps } from "../../dom/h";
+import { effect } from "../../dom/signals";
 import { injectStyles } from "../../dom/styles";
 import { css } from "./Hotspot.styles";
 
@@ -22,14 +23,13 @@ const DEFAULT_COLOR = "#C5F11E";
 /*
  * Anatomy (all sized in --wd-u, so it scales with the player):
  * - the button is an invisible ≥44px hit box, centered on the anchor
- * - .halo: a soft static disc of the brand color
- * - .ripple ×2: sonar rings, offset by half a period
- * - .core: the solid dot — white inner ring + dark hairline outline, so it reads on light
- *   and dark screenshots alike, with a slight top-light gradient and lift
+ * - .ring: a thin breathing ring, open so it doesn't cover what it points at
+ * - .pulse: a fainter ring leaving it, once per breath
+ * - .core: the small solid center
  */
 export function Hotspot(props: ViewProps<HotspotProps>): HTMLButtonElement {
   injectStyles(document, "hotspot", css);
-  return h(
+  const element = h(
     "button",
     {
       type: "button",
@@ -41,8 +41,6 @@ export function Hotspot(props: ViewProps<HotspotProps>): HTMLButtonElement {
           props.appear?.() && "hotspot--appear",
           props.hovered?.() && "hotspot--hover",
         ),
-      style: () =>
-        `left: ${props.left()}px; top: ${props.top()}px; --openshowcase-color: ${props.color?.() ?? DEFAULT_COLOR};`,
       onclick: () => props.onclick?.(),
       onmouseenter: () => props.onhoverchange?.(true),
       onmouseleave: () => props.onhoverchange?.(false),
@@ -50,12 +48,21 @@ export function Hotspot(props: ViewProps<HotspotProps>): HTMLButtonElement {
     h(
       "span",
       { class: "dot" },
-      h("span", { class: "halo" }),
-      h("span", { class: "ripple" }),
-      h("span", { class: "ripple ripple--late" }),
+      h("span", { class: "pulse" }),
+      h("span", { class: "ring" }),
       h("span", { class: "core" }),
     ),
   );
+  // Properties, not a style attribute: a demo's color can't add declarations
+  effect(() => {
+    element.style.left = `${props.left()}px`;
+    element.style.top = `${props.top()}px`;
+    element.style.setProperty(
+      "--openshowcase-color",
+      props.color?.() ?? DEFAULT_COLOR,
+    );
+  });
+  return element;
 }
 
 /** Exit: a quick shrink + fade, eased in — it's leaving, it shouldn't linger. Resolves when done. */

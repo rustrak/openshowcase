@@ -440,6 +440,10 @@ export function Editor({
           <div className={mode === "edit" ? "contents" : "hidden"}>
             <Stage
               step={selected}
+              stepPosition={{
+                current: selectedIndex + 1,
+                total: steps.length,
+              }}
               theme={theme}
               title={title}
               aspectRatio={aspectRatio}

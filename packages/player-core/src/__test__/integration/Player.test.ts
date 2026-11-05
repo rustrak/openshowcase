@@ -64,9 +64,9 @@ describe("Player (mount.ts) integration", () => {
       expect(container.querySelector('[aria-label="Hotspot"]')).not.toBeNull(),
     );
     await vi.waitFor(() =>
-      expect(container.querySelector(".tooltip--visible")?.textContent).toBe(
-        "Click here",
-      ),
+      expect(
+        container.querySelector(".tooltip--visible")?.textContent,
+      ).toContain("Click here"),
     );
 
     expect(onStepChange).toHaveBeenCalledWith(
@@ -95,6 +95,54 @@ describe("Player (mount.ts) integration", () => {
     );
     expect(container.querySelector(".openshowcase-player")).toBe(root);
     expect(hotspot()).toBe(shownHotspot);
+  });
+
+  it.each([
+    "url(https://evil.example/plain.png)",
+    "red; background: url(https://evil.example/added.png)",
+    "var(--x, url(https://evil.example/fallback.png))",
+    "image-set('https://evil.example/set.png' 1x)",
+  ])("loads nothing from a demo's color: %s", async (color) => {
+    container.style.width = "800px";
+    const onStepChange = vi.fn();
+    const image = { src: TINY_PNG, width: 800, height: 600 };
+    const hotspot = (x: number) => ({
+      x,
+      y: 0.4,
+      label: "A hostile label",
+      bgColor: color,
+      textColor: color,
+    });
+    player = new Player({
+      container,
+      onStepChange,
+      demo: {
+        id: "hostile",
+        title: "Hostile",
+        theme: {
+          wrapper: "browser",
+          autoplay: true,
+          appearance: "light",
+          backdrop: { color, fill: "soft" },
+        },
+        steps: [
+          { id: "a", type: "photo", image, hotspot: hotspot(0.3) },
+          { id: "b", type: "photo", image, hotspot: hotspot(0.7) },
+        ],
+      },
+    });
+    player.mount();
+    await vi.waitFor(() =>
+      expect(container.querySelector(".tooltip--visible")).not.toBeNull(),
+    );
+    // both the glide's trail and the click's burst draw with it
+    container.querySelector<HTMLElement>(".tooltip--visible")?.click();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    const hostile = performance
+      .getEntriesByType("resource")
+      .filter((entry) => entry.name.includes("evil.example"));
+    expect(hostile.map((entry) => entry.name)).toEqual([]);
   });
 
   describe("controls", () => {

@@ -92,6 +92,20 @@ describe("Hotspot", () => {
   });
 });
 
+describe("Hotspot colors", () => {
+  it("keeps a demo's color from adding other styles", async () => {
+    const screen = await render({
+      left: 10,
+      top: 20,
+      color: "red; background: url(https://example.com/x)",
+    });
+    const button = screen.getByRole("button").element() as HTMLElement;
+
+    expect(button.getAttribute("style") ?? "").not.toContain("url(");
+    expect(button.style.left).toBe("10px");
+  });
+});
+
 describe("Hotspot exit", () => {
   it("vanish() fades and shrinks the element out, then resolves", async () => {
     const el = document.createElement("div");

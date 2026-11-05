@@ -104,6 +104,38 @@ describe("PhotoLayer", () => {
     ).toBe(false);
   });
 
+  it("leaves a trail when the hotspot glides, not when it jumps", async () => {
+    const at = (left: number, top: number, instant: boolean) => ({
+      left,
+      top,
+      color: "#111",
+      instant,
+      appear: false,
+    });
+    const props = {
+      visible: true,
+      src: "a.png",
+      alt: "",
+      transform: "none",
+      stageSize: { width: 400, height: 300 },
+    };
+    const screen = await render({ ...props, hotspot: at(10, 20, true) });
+    const trail = () => screen.container.querySelector<HTMLElement>(".trail");
+
+    await screen.rerender({ ...props, hotspot: at(50, 20, true) });
+    expect(trail()).toBeNull();
+
+    await screen.rerender({ ...props, hotspot: at(50, 50, false) });
+    expect(trail()?.style.left).toBe("50px");
+    expect(trail()?.style.top).toBe("20px");
+    expect(trail()?.style.width).toBe("30px");
+    expect(trail()?.style.getPropertyValue("--openshowcase-color")).toBe(
+      "#111",
+    );
+
+    await vi.waitFor(() => expect(trail()).toBeNull());
+  });
+
   it("calls onHotspotAdvance when the hotspot is clicked", async () => {
     const onHotspotAdvance = vi.fn();
     const screen = await render({

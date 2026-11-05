@@ -22,6 +22,8 @@ export interface PhotoTooltipVisual {
   text: string;
   bgColor?: string;
   textColor?: string;
+  /** Where this step is in the demo. Filled in by the player, which knows the steps. */
+  step?: { current: number; total: number };
 }
 
 /** Colors that override every step's own hotspot/tooltip colors, e.g. to force a brand color. */

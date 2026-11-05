@@ -1,7 +1,7 @@
 import type { HotspotPosition } from "@rustrak/openshowcase-schema";
 import { bubblePath } from "../../core/bubble-path";
 import { computeTooltipPlacement, type TooltipSide } from "../../core/geometry";
-import { cx, h, onCleanup, svg, type ViewProps } from "../../dom/h";
+import { cx, each, h, onCleanup, show, svg, type ViewProps } from "../../dom/h";
 import { computed, effect, signal } from "../../dom/signals";
 import { injectStyles } from "../../dom/styles";
 import { css } from "./Tooltip.styles";
@@ -16,15 +16,16 @@ export interface TooltipProps {
   text: string;
   bgColor?: string;
   textColor?: string;
-  /** Hover is shared visually with the Hotspot point, so it's controlled by the parent
-   * rather than tracked internally — hovering either one highlights both. */
-  hovered?: boolean;
+  /** Where this step is in the demo, for the footer. No footer without it. */
+  step?: { current: number; total: number } | undefined;
   onclick?: () => void;
   onhoverchange?: (hovered: boolean) => void;
 }
 
 /** Must match the exit transition in Tooltip.styles.ts. */
 const EXIT_MS = 150;
+/** The font size in --wd-u. Must match Tooltip.styles.ts. */
+const FONT_SIZE_U = 0.92;
 
 /** Unique per tooltip — the SVG gradients/clip are referenced by id. */
 let nextId = 0;
@@ -35,6 +36,7 @@ interface Shown {
   bgColor: string;
   textColor: string;
   position: HotspotPosition | undefined;
+  step: { current: number; total: number } | undefined;
 }
 
 export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
@@ -46,6 +48,7 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
     bgColor: props.bgColor?.() ?? "#C5F11E",
     textColor: props.textColor?.() ?? "#0C0C0C",
     position: props.position?.(),
+    step: props.step?.(),
   });
 
   // What's on screen. While the tooltip fades out it keeps showing the *old* text and
@@ -60,6 +63,18 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
     }
     const timer = setTimeout(() => shown(next), EXIT_MS);
     return () => clearTimeout(timer);
+  });
+
+  // Words animate in one by one. The spaces stay plain text, so it wraps and reads as ever.
+  const tokens = computed(() => {
+    let word = 0;
+    return shown()
+      .text.split(/(\s+)/)
+      .filter(Boolean)
+      .map((text) => ({
+        text,
+        word: /\s/.test(text) ? -1 : word++,
+      }));
   });
 
   const size = signal({ width: 0, height: 0, unit: 14 });
@@ -78,15 +93,13 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
     return bubblePath({
       width,
       height,
-      radius: unit * 0.65,
+      radius: unit * 0.95,
       side,
       tailOffset: arrowOffset,
       tail: { width: unit * 1.2, height: unit * 0.55, tipRadius: 2 },
     });
   });
 
-  const stop = (offset: string, style: () => string) =>
-    svg("stop", { offset, style });
   const fixedStop = (offset: string, color: string, opacity: string) =>
     svg("stop", {
       offset,
@@ -108,31 +121,14 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
       svg(
         "linearGradient",
         { id: `${uid}-fill`, x1: "0", y1: "0", x2: "0", y2: "1" },
-        stop(
-          "0",
-          () =>
-            `stop-color: color-mix(in oklab, ${shown().bgColor} 86%, white)`,
-        ),
-        stop("0.5", () => `stop-color: ${shown().bgColor}`),
-        stop(
-          "1",
-          () =>
-            `stop-color: color-mix(in oklab, ${shown().bgColor} 92%, black)`,
-        ),
-      ),
-      svg(
-        "radialGradient",
-        { id: `${uid}-sheen`, cx: "0.1", cy: "-0.35", r: "1" },
-        fixedStop("0", "#fff", "0.26"),
-        fixedStop("0.6", "#fff", "0"),
+        svg("stop", { offset: "0", class: "fill-top" }),
+        svg("stop", { offset: "1", class: "fill-base" }),
       ),
       svg(
         "linearGradient",
         { id: `${uid}-rim`, x1: "0", y1: "0", x2: "0", y2: "1" },
-        fixedStop("0", "#fff", "0.5"),
-        fixedStop("0.4", "#fff", "0"),
-        fixedStop("0.8", "#000", "0"),
-        fixedStop("1", "#000", "0.1"),
+        fixedStop("0", "#fff", "0.45"),
+        fixedStop("0.25", "#fff", "0"),
       ),
       svg(
         "clipPath",
@@ -141,7 +137,6 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
       ),
     ),
     svg("path", { d: () => outline(), fill: `url(#${uid}-fill)` }),
-    svg("path", { d: () => outline(), fill: `url(#${uid}-sheen)` }),
     svg("path", {
       d: () => outline(),
       class: "rim",
@@ -162,15 +157,12 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
         return cx(
           "tooltip",
           props.visible() && "tooltip--visible",
-          props.hovered?.() && "tooltip--hover",
           side === "top" && "tooltip--side-top",
           side === "bottom" && "tooltip--side-bottom",
           side === "left" && "tooltip--side-left",
           side === "right" && "tooltip--side-right",
         );
       },
-      style: () =>
-        `left: ${placement().left}px; top: ${placement().top}px; --wd-tip-bg: ${shown().bgColor}; color: ${shown().textColor}; --wd-arrow: ${placement().arrowOffset}px;`,
       onclick: () => props.onclick?.(),
       onkeydown: (event: KeyboardEvent) => {
         if (event.key === "Enter" || event.key === " ") props.onclick?.();
@@ -179,8 +171,62 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
       onmouseleave: () => props.onhoverchange?.(false),
     },
     body,
-    () => shown().text,
+    each(
+      () => tokens(),
+      (token, index) => `${index}:${token.text}`,
+      (token) => {
+        const { text, word } = token();
+        return word < 0
+          ? document.createTextNode(text)
+          : h("span", { class: "tip-word", style: `--wd-i: ${word}` }, text);
+      },
+    ),
+    show(
+      () => shown().step,
+      () =>
+        h(
+          "div",
+          { class: "tip-foot", "aria-hidden": "true" },
+          h("span", { class: "tip-count" }, () => {
+            const step = shown().step;
+            return step ? `${step.current}/${step.total}` : "";
+          }),
+          h(
+            "span",
+            { class: "tip-bar" },
+            h("span", {
+              class: "tip-bar-fill",
+              style: () => {
+                const step = shown().step;
+                return `width: ${step ? (step.current / step.total) * 100 : 0}%`;
+              },
+            }),
+          ),
+          h(
+            "span",
+            { class: "tip-go" },
+            svg(
+              "svg",
+              { viewBox: "0 0 16 16" },
+              svg("path", { d: "M3.5 8h9M8.5 4l4 4-4 4" }),
+            ),
+          ),
+        ),
+    ),
   );
+
+  // Properties, not a style attribute: a demo's colors can't add declarations
+  effect(() => {
+    const { left, top, arrowOffset } = placement();
+    root.style.left = `${left}px`;
+    root.style.top = `${top}px`;
+    root.style.setProperty("--wd-arrow", `${arrowOffset}px`);
+  });
+  effect(() => {
+    const { bgColor, textColor } = shown();
+    root.style.setProperty("--wd-tip-bg", bgColor);
+    root.style.color = textColor;
+  });
 
   // Re-measure whenever what's shown or the stage changes (text changes the rendered size).
   // It needs the element in the page, so it starts once the caller has inserted it.
@@ -188,12 +234,13 @@ export function Tooltip(props: ViewProps<TooltipProps>): HTMLDivElement {
   queueMicrotask(() => mounted(true));
   effect(() => {
     void shown().text;
+    void shown().step;
     const stageSize = props.stageSize();
     if (!mounted() || !root.isConnected) return;
-    // --wd-u in px, recovered from the font size it drives (0.875u) — the gap clears the
-    // hotspot's halo at every player size.
+    // --wd-u in px, recovered from the font size it drives — the gap clears the hotspot's
+    // ring at every player size.
     const unit =
-      Number.parseFloat(getComputedStyle(root).fontSize) / 0.875 || 14;
+      Number.parseFloat(getComputedStyle(root).fontSize) / FONT_SIZE_U || 14;
     size({ width: root.offsetWidth, height: root.offsetHeight, unit });
     placement(
       computeTooltipPlacement({

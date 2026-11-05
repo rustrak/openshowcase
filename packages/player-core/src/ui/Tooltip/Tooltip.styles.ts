@@ -4,14 +4,16 @@ export const css = `
   position: absolute;
   z-index: 4;
   width: max-content;
-  min-width: calc(var(--wd-u, 14px) * 4);
-  max-width: min(calc(var(--wd-u, 14px) * 18), 300px);
-  padding: calc(var(--wd-u, 14px) * 0.7) calc(var(--wd-u, 14px) * 0.9);
-  border-radius: calc(var(--wd-u, 14px) * 0.65);
-  font-size: calc(var(--wd-u, 14px) * 0.875);
+  min-width: calc(var(--wd-u, 14px) * 14);
+  max-width: min(calc(var(--wd-u, 14px) * 19), 74cqw);
+  padding: calc(var(--wd-u, 14px) * 0.78) calc(var(--wd-u, 14px) * 0.95)
+    calc(var(--wd-u, 14px) * 0.62);
+  border-radius: calc(var(--wd-u, 14px) * 0.95);
+  /* Tooltip.ts recovers --wd-u from this: keep FONT_SIZE_U in sync */
+  font-size: calc(var(--wd-u, 14px) * 0.92);
   font-weight: 500;
-  line-height: 1.45;
-  letter-spacing: -0.005em;
+  line-height: 1.38;
+  letter-spacing: -0.006em;
   text-align: left;
   text-wrap: pretty;
   overflow-wrap: anywhere;
@@ -23,34 +25,32 @@ export const css = `
   isolation: isolate;
   background: none;
 
-  /* hidden: nudged toward the hotspot, slightly small and soft */
+  /* hidden: pulled in toward the hotspot, small */
   opacity: 0;
   translate: var(--wd-from, 0 0);
-  scale: 0.94;
-  filter: blur(3px);
+  scale: 0.82;
   /* exit: fast, eased in */
   transition:
     opacity 150ms var(--wd-ease-in, ease-in),
     translate 150ms var(--wd-ease-in, ease-in),
-    scale 150ms var(--wd-ease-in, ease-in),
-    filter 150ms var(--wd-ease-in, ease-in);
+    scale 150ms var(--wd-ease-in, ease-in);
 }
 
 /* grows out of the arrow tip */
 .openshowcase-player .tooltip--side-top {
-  --wd-from: 0 6px;
+  --wd-from: 0 10px;
   transform-origin: var(--wd-arrow) 100%;
 }
 .openshowcase-player .tooltip--side-bottom {
-  --wd-from: 0 -6px;
+  --wd-from: 0 -10px;
   transform-origin: var(--wd-arrow) 0;
 }
 .openshowcase-player .tooltip--side-left {
-  --wd-from: 6px 0;
+  --wd-from: 10px 0;
   transform-origin: 100% var(--wd-arrow);
 }
 .openshowcase-player .tooltip--side-right {
-  --wd-from: -6px 0;
+  --wd-from: -10px 0;
   transform-origin: 0 var(--wd-arrow);
 }
 
@@ -59,17 +59,39 @@ export const css = `
   opacity: 1;
   translate: 0 0;
   scale: 1;
-  filter: blur(0);
-  /* enter: a soft spring */
+  /* enter: the box springs out softly, then its words settle in one after another */
   transition:
-    opacity 200ms var(--wd-ease-out, ease-out),
-    translate 440ms var(--wd-spring-tip, ease-out),
-    scale 440ms var(--wd-spring-tip, ease-out),
-    filter 240ms var(--wd-ease-out, ease-out);
+    opacity 140ms var(--wd-ease-out, ease-out),
+    translate 620ms var(--wd-spring-tip, ease-out),
+    scale 620ms var(--wd-spring-tip, ease-out);
 }
 
-.openshowcase-player .tooltip--hover {
-  scale: 1.02;
+.openshowcase-player .tip-word {
+  display: inline-block;
+}
+/* The cap keeps a long label from taking its time: past it, words arrive together */
+.openshowcase-player .tooltip--visible .tip-word {
+  animation: openshowcase-tip-word 360ms var(--wd-ease-out, ease-out) both;
+  animation-delay: calc(min(var(--wd-i), 18) * 24ms + 70ms);
+}
+.openshowcase-player .tooltip--visible .tip-foot {
+  animation: openshowcase-tip-word 360ms var(--wd-ease-out, ease-out) 140ms both;
+}
+@keyframes openshowcase-tip-word {
+  from {
+    opacity: 0;
+    translate: 0 0.35em;
+  }
+}
+
+/* Only being pressed moves it: it gives under the pointer, and sits closer to the page */
+.openshowcase-player .tooltip--visible:active {
+  scale: 0.96;
+  transition: scale 90ms var(--wd-ease-out, ease-out);
+}
+.openshowcase-player .tooltip--visible:active .body {
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.18));
+  transition-duration: 90ms;
 }
 
 .openshowcase-player .tooltip:focus-visible .edge {
@@ -77,25 +99,27 @@ export const css = `
   stroke-width: 3px;
 }
 
-/* The body: fill (a subtle top-lit gradient of the brand color) + a specular sheen + an
-   inner rim (light along the top, a faint shade at the bottom, clipped inside the shape so
-   it reads as a bevel) + a 1px dark edge — all following box and tail as one outline. The
-   layered drop-shadow is on the SVG so it follows the tail too. */
+/* The body: its color with a touch of light from above, a light hairline along the top, and a
+   darker edge, all following box and tail as one outline. The shadow is on the SVG so it
+   follows the tail too, and takes the tooltip's color so it sits in the page. */
 .openshowcase-player .body {
   position: absolute;
   inset: 0 auto auto 0;
   z-index: -1;
   overflow: visible;
   pointer-events: none;
-  filter: drop-shadow(0 1px 1px rgb(17 24 39 / 0.1))
-    drop-shadow(0 4px 8px rgb(17 24 39 / 0.1))
-    drop-shadow(0 14px 28px rgb(17 24 39 / 0.14));
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.12))
+    drop-shadow(
+      0 14px 18px
+        color-mix(in srgb, color-mix(in srgb, var(--wd-tip-bg) 45%, black) 60%, transparent)
+    );
   transition: filter 200ms ease;
 }
-.openshowcase-player .tooltip--hover .body {
-  filter: drop-shadow(0 1px 1px rgb(17 24 39 / 0.12))
-    drop-shadow(0 6px 12px rgb(17 24 39 / 0.14))
-    drop-shadow(0 18px 36px rgb(17 24 39 / 0.18));
+.openshowcase-player .fill-top {
+  stop-color: color-mix(in oklab, var(--wd-tip-bg) 94%, white);
+}
+.openshowcase-player .fill-base {
+  stop-color: var(--wd-tip-bg);
 }
 .openshowcase-player .rim {
   fill: none;
@@ -103,16 +127,75 @@ export const css = `
 }
 .openshowcase-player .edge {
   fill: none;
-  stroke: rgb(0 0 0 / 0.16);
-  stroke-width: 1px;
+  stroke: color-mix(in srgb, var(--wd-tip-bg) 60%, black);
+  stroke-width: 0.75px;
+}
+
+/* The footer: how far into the demo this is, and where clicking leads */
+.openshowcase-player .tip-foot {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--wd-u, 14px) * 0.55);
+  margin-top: calc(var(--wd-u, 14px) * 0.55);
+  padding-top: calc(var(--wd-u, 14px) * 0.5);
+  box-shadow: inset 0 0.5px 0 color-mix(in srgb, currentColor 14%, transparent);
+}
+.openshowcase-player .tip-count {
+  flex: none;
+  font-size: 0.76em;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: color-mix(in srgb, currentColor 62%, transparent);
+}
+.openshowcase-player .tip-bar {
+  flex: 1;
+  height: calc(var(--wd-u, 14px) * 0.24);
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+.openshowcase-player .tip-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: currentColor;
+  transition: width 420ms var(--wd-ease-out, ease-out);
+}
+.openshowcase-player .tip-go {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: calc(var(--wd-u, 14px) * 1.55);
+  height: calc(var(--wd-u, 14px) * 1.55);
+  border-radius: 50%;
+  background: currentColor;
+}
+.openshowcase-player .tip-go svg {
+  display: block;
+  width: 56%;
+  height: 56%;
+  fill: none;
+  color: var(--wd-tip-bg);
+  stroke: currentColor;
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .openshowcase-player .tooltip,
-.openshowcase-player .tooltip--visible {
+  .openshowcase-player .tooltip--visible {
     translate: 0 0;
     scale: 1;
     transition: opacity 150ms ease;
+  }
+  .openshowcase-player .tooltip--visible .tip-word,
+  .openshowcase-player .tooltip--visible .tip-foot {
+    animation: none;
+  }
+  .openshowcase-player .tip-bar-fill {
+    transition: none;
   }
 }
 `;
