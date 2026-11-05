@@ -107,6 +107,32 @@ describe("<InteractiveDemo />", () => {
     expect(container.querySelector(".openshowcase-player")).toBe(player);
   });
 
+  it("overrides the demo's wrapper and backdrop, live and without remounting", async () => {
+    const props = reactive<Record<string, unknown>>({
+      demo,
+      wrapper: "browser",
+      backdrop: null,
+    });
+    app = createApp({ render: () => h(InteractiveDemo, props) });
+    app.mount(container);
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame--browser")).not.toBeNull(),
+    );
+    const player = container.querySelector(".openshowcase-player");
+    expect(container.querySelector(".frame-backdrop--on")).toBeNull();
+
+    props.wrapper = "bezel";
+    props.backdrop = { color: "#ff0000", fill: "glow" };
+
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame--bezel")).not.toBeNull(),
+    );
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame-backdrop--glow")).not.toBeNull(),
+    );
+    expect(container.querySelector(".openshowcase-player")).toBe(player);
+  });
+
   it("plays a single-file bundle", async () => {
     const bundle = await buildDemoBundle({
       demo,

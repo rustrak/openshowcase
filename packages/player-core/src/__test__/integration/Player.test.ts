@@ -97,6 +97,141 @@ describe("Player (mount.ts) integration", () => {
     expect(hotspot()).toBe(shownHotspot);
   });
 
+  describe("frame", () => {
+    const part = (selector: string) =>
+      container.querySelector<HTMLElement>(selector);
+    const withTheme = (theme: Partial<Demo["theme"]>) => {
+      const demo = createDemo();
+      return { ...demo, theme: { ...demo.theme, ...theme } };
+    };
+
+    it("draws the demo's wrapper and backdrop", () => {
+      player = new Player({
+        container,
+        demo: withTheme({
+          wrapper: "bezel",
+          backdrop: { color: "#ff0000", fill: "soft", padding: 8 },
+        }),
+      });
+      player.mount();
+
+      expect(part(".frame--bezel")).not.toBeNull();
+      expect(part(".browser-chrome")).not.toBeNull();
+      const backdrop = part(".frame-backdrop--on");
+      expect(backdrop?.classList).toContain("frame-backdrop--soft");
+      expect(getComputedStyle(backdrop as HTMLElement).backgroundColor).toBe(
+        "rgb(255, 0, 0)",
+      );
+      // 8% of the 800px player
+      container.style.width = "800px";
+      expect(getComputedStyle(backdrop as HTMLElement).paddingLeft).toBe(
+        "64px",
+      );
+    });
+
+    it("defaults a backdrop's fill and padding", () => {
+      container.style.width = "800px";
+      player = new Player({
+        container,
+        demo: withTheme({ backdrop: { color: "#ff0000" } }),
+      });
+      player.mount();
+
+      const backdrop = part(".frame-backdrop--on") as HTMLElement;
+      expect(backdrop.className).not.toContain("frame-backdrop--solid");
+      expect(getComputedStyle(backdrop).paddingLeft).toBe("40px");
+    });
+
+    it("lets the options override the demo's", () => {
+      player = new Player({
+        container,
+        demo: withTheme({
+          wrapper: "browser",
+          backdrop: { color: "#ff0000" },
+        }),
+        wrapper: "none",
+        backdrop: null,
+      });
+      player.mount();
+
+      expect(part(".browser-chrome")).toBeNull();
+      expect(part(".frame-backdrop--on")).toBeNull();
+    });
+
+    it("switches live, keeping the stage, and goes back to the demo's", () => {
+      player = new Player({
+        container,
+        demo: withTheme({ wrapper: "none" }),
+      });
+      player.mount();
+      const video = part("video");
+
+      player.setWrapper("browser");
+      expect(part(".frame--browser")).not.toBeNull();
+      // the bar sits above the stage, not below it
+      expect(part(".frame-window")?.firstElementChild?.className).toContain(
+        "browser-chrome",
+      );
+      player.setWrapper("bezel");
+      expect(part(".frame--browser")).toBeNull();
+      expect(part(".frame--bezel")).not.toBeNull();
+      player.setBackdrop({ color: "#00ff00", fill: "glow" });
+      expect(part(".frame-backdrop--glow")).not.toBeNull();
+
+      player.setWrapper(undefined);
+      player.setBackdrop(undefined);
+      expect(part(".browser-chrome")).toBeNull();
+      expect(part(".frame-backdrop--on")).toBeNull();
+      expect(part("video")).toBe(video);
+    });
+
+    it("keeps a demo's color from adding other styles", () => {
+      player = new Player({
+        container,
+        demo: withTheme({
+          backdrop: { color: "red; background: url(https://example.com/x)" },
+        }),
+      });
+      player.mount();
+
+      expect(
+        part(".frame-backdrop")?.getAttribute("style") ?? "",
+      ).not.toContain("url(");
+    });
+
+    it("doesn't clip the frame's shadow", () => {
+      player = new Player({
+        container,
+        demo: withTheme({ wrapper: "browser" }),
+      });
+      player.mount();
+
+      expect(
+        getComputedStyle(part(".openshowcase-player") as HTMLElement).overflow,
+      ).toBe("visible");
+      expect(getComputedStyle(part(".frame") as HTMLElement).overflow).toBe(
+        "visible",
+      );
+    });
+
+    it("centers the title on the bar", () => {
+      player = new Player({
+        container,
+        demo: withTheme({ wrapper: "browser" }),
+      });
+      player.mount();
+
+      const center = (el: Element | null) => {
+        const box = (el as Element).getBoundingClientRect();
+        return box.left + box.width / 2;
+      };
+      expect(center(part(".browser-chrome__address"))).toBeCloseTo(
+        center(part(".browser-chrome")),
+        0,
+      );
+    });
+  });
+
   it('follows prefers-color-scheme live with appearance "auto"', async () => {
     let listener: ((event: { matches: boolean }) => void) | undefined;
     vi.spyOn(window, "matchMedia").mockReturnValue({

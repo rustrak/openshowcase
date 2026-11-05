@@ -82,14 +82,36 @@ export const defaultPanZoomTiming = {
   easing: "cinematic",
 } as const satisfies Partial<PanZoom>;
 
-export const ThemeWrapperSchema = v.picklist(["none", "browser"]);
+/** The window around the demo: nothing, a browser, or a browser inside a glass bezel. */
+export const ThemeWrapperSchema = v.picklist(["none", "browser", "bezel"]);
 export type ThemeWrapper = v.InferOutput<typeof ThemeWrapperSchema>;
+
+export const BackdropFillSchema = v.picklist(["solid", "soft", "glow"]);
+export type BackdropFill = v.InferOutput<typeof BackdropFillSchema>;
+
+/** A colored surface behind the wrapper, which sits centered on it. */
+export const BackdropSchema = v.object({
+  /** Any CSS color. */
+  color: v.string(),
+  /** `solid`, a `soft` diagonal gradient, or a `glow` rising from the bottom edge. */
+  fill: v.optional(BackdropFillSchema),
+  /** Margin around the wrapper on every side, as a percentage of the player's width. */
+  padding: v.optional(v.pipe(number(), v.minValue(0), v.maxValue(25))),
+});
+export type Backdrop = v.InferOutput<typeof BackdropSchema>;
+
+export const defaultBackdrop = {
+  color: "#4F46E5",
+  fill: "solid",
+  padding: 5,
+} as const satisfies Required<Backdrop>;
 
 export const ThemeAppearanceSchema = v.picklist(["light", "dark"]);
 export type ThemeAppearance = v.InferOutput<typeof ThemeAppearanceSchema>;
 
 export const ThemeSchema = v.object({
   wrapper: ThemeWrapperSchema,
+  backdrop: v.optional(BackdropSchema),
   /** After the last step, restart the demo from the beginning instead of stopping. */
   autoplay: v.boolean(),
   /** Colors of the wrapper and the player controls — to match the light/dark mode of the embedding site. */

@@ -4,7 +4,7 @@ import { ArrowLeft, RotateCcw } from "lucide-react";
 import { useRef, useState } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
 import { fitStage } from "../core/stage-fit";
-import { BROWSER_CHROME_HEIGHT } from "../lib/player-appearance";
+import { frameSize } from "../lib/player-appearance";
 import { Hint } from "./controls";
 
 /** Preview mode: the real player, exactly as it will ship, centered on the stage. */
@@ -20,13 +20,13 @@ export function PreviewStage({
   const wellRef = useRef<HTMLDivElement>(null);
   const well = useElementSize(wellRef);
   const [run, setRun] = useState(0);
-  const { width } = fitStage(
+  const { outerWidth: width } = fitStage(
     {
       width: Math.max(0, well.width - 96),
       height: Math.max(0, well.height - 124),
     },
     aspectRatio,
-    demo.theme.wrapper === "browser" ? BROWSER_CHROME_HEIGHT : 0,
+    frameSize(demo.theme),
   );
 
   return (

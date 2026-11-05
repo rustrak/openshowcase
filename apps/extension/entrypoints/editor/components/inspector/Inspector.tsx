@@ -17,7 +17,7 @@ export function Inspector({
   onTabChange: (tab: InspectorTab) => void;
   stepProps: StepInspectorProps | undefined;
   theme: Theme;
-  onThemeChange: (theme: Theme) => void;
+  onThemeChange: (theme: Theme, coalesceKey?: string) => void;
 }) {
   return (
     <aside

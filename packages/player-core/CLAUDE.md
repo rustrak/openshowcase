@@ -29,4 +29,6 @@ Framework-agnostic playback engine used by both adapters and by the extension's 
 - Overlay sizes use `--wd-u` (the root is an inline-size container), so they scale with the embed. Every animation has a `prefers-reduced-motion` branch.
 - The tooltip box and its tail are **one SVG outline** (`core/bubble-path.ts`). Don't reintroduce a separate arrow element: it can't stay seamless with gradients, borders and shadows.
 - Spotlight lights are a managed list with timed removal in `ui/PhotoLayer/PhotoLayer.ts`, not exit animations (a light must leave in place even when the step changes mid-fade).
-- The extension editor mirrors the hotspot/tooltip look (`apps/extension/entrypoints/editor/components/stage/player-visuals.css`). Update it when changing visuals here.
+- The extension editor mirrors the hotspot/tooltip look (`apps/extension/entrypoints/editor/components/stage/player-visuals.css`) and the frame (`stage/BrowserBar.tsx` and `frameStyles` in `lib/player-appearance.ts`). Update them when changing visuals here.
+- A demo's backdrop color reaches the page only as a custom property read by color properties, never in a `style` attribute or a `background` shorthand: it's untrusted data, and it must not be able to load a `url()`.
+- Don't put `overflow: hidden` back on the root or `.frame`: it clips the frame's shadow.

@@ -83,6 +83,8 @@ function mountPlayer(): void {
     resolveAsset: state.value.resolveAsset,
     hotspotStyle: props.hotspotStyle,
     appearance: props.appearance,
+    wrapper: props.wrapper,
+    backdrop: props.backdrop,
     startWhenVisible: props.startWhenVisible,
     onStepChange: props.onStepChange,
   });
@@ -94,6 +96,14 @@ watch(state, mountPlayer);
 watch(
   () => props.appearance,
   (appearance) => player?.setAppearance(appearance),
+);
+watch(
+  () => props.wrapper,
+  (wrapper) => player?.setWrapper(wrapper),
+);
+watch(
+  () => JSON.stringify(props.backdrop),
+  () => player?.setBackdrop(props.backdrop),
 );
 watch(
   () => [props.hotspotStyle?.bgColor, props.hotspotStyle?.textColor],

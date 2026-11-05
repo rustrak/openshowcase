@@ -89,7 +89,7 @@ function App() {
               <HostStage
                 url={state.url}
                 aspectRatio={state.inspected.width / state.inspected.height}
-                browserChrome={state.inspected.browserChrome}
+                theme={state.inspected.theme}
                 background={background}
                 run={run}
               />

@@ -89,6 +89,26 @@ describe("parseDemo", () => {
       (d) => (d.theme = { ...(d.theme as object), wrapper: "phone" }),
     ],
     [
+      "a backdrop without a color",
+      (d) => (d.theme = { ...(d.theme as object), backdrop: { padding: 5 } }),
+    ],
+    [
+      "an unknown backdrop fill",
+      (d) =>
+        (d.theme = {
+          ...(d.theme as object),
+          backdrop: { color: "#000", fill: "mesh" },
+        }),
+    ],
+    [
+      "a backdrop padding over 25%",
+      (d) =>
+        (d.theme = {
+          ...(d.theme as object),
+          backdrop: { color: "#000", padding: 26 },
+        }),
+    ],
+    [
       "a non-boolean autoplay",
       (d) => (d.theme = { ...(d.theme as object), autoplay: "yes" }),
     ],

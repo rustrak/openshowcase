@@ -1,14 +1,16 @@
 import type { Hotspot, PanZoom, Theme } from "@rustrak/openshowcase-schema";
-import { LoaderCircle, RotateCw } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { type ReactNode, type RefObject, useRef } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
 import { cn } from "@/lib/utils";
 import { fitStage } from "../../core/stage-fit";
 import type { EditableStep } from "../../lib/editable-step";
 import {
-  BROWSER_CHROME_HEIGHT,
+  frameSize,
+  frameStyles,
   PLAYER_APPEARANCE,
 } from "../../lib/player-appearance";
+import { BrowserBar } from "./BrowserBar";
 import { CameraLayer } from "./CameraLayer";
 import { HotspotLayer } from "./HotspotLayer";
 import type { StageTool } from "./StageToolbar";
@@ -52,7 +54,6 @@ export function Stage({
   const wellRef = useRef<HTMLDivElement>(null);
   const mediaRef = useRef<HTMLDivElement>(null);
   const well = useElementSize(wellRef);
-  const browser = theme.wrapper === "browser";
   const colors = PLAYER_APPEARANCE[theme.appearance];
   const media = fitStage(
     {
@@ -60,8 +61,9 @@ export function Stage({
       height: Math.max(0, well.height - PAD_TOP - PAD_BOTTOM),
     },
     aspectRatio,
-    browser ? BROWSER_CHROME_HEIGHT : 0,
+    frameSize(theme),
   );
+  const frame = frameStyles(theme, media.outerWidth);
 
   const data = step?.data;
   const hotspot = data?.kind === "photo" ? data.hotspot : undefined;
@@ -84,130 +86,99 @@ export function Stage({
         style={{
           top:
             PAD_TOP +
-            (well.height -
-              PAD_TOP -
-              PAD_BOTTOM -
-              media.height -
-              (browser ? BROWSER_CHROME_HEIGHT : 0)) /
-              2,
+            (well.height - PAD_TOP - PAD_BOTTOM - media.outerHeight) / 2,
         }}
       >
-        <div
-          className={cn(
-            "overflow-hidden",
-            browser &&
-              "rounded-xl shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_24px_60px_-16px_rgb(15_23_42/0.45)]",
-            !browser &&
-              "shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_16px_40px_-16px_rgb(15_23_42/0.35)]",
-          )}
-          style={{ background: colors.frame, width: media.width }}
-        >
-          {browser && (
-            <div
-              className="flex items-center gap-1.5 border-b px-3.5"
-              style={{
-                height: BROWSER_CHROME_HEIGHT,
-                background: colors.chromeBg,
-                borderColor: colors.chromeBorder,
-              }}
-            >
-              {[0, 1, 2].map((i) => (
-                <span
-                  key={i}
-                  className="size-2.5 rounded-full"
-                  style={{ background: colors.dot }}
+        <div style={{ ...frame.backdrop, width: media.outerWidth }}>
+          <div style={frame.frame}>
+            <div style={frame.window}>
+              {theme.wrapper !== "none" && (
+                <BrowserBar
+                  theme={theme}
+                  title={title}
+                  outerWidth={media.outerWidth}
                 />
-              ))}
-              <span
-                className="mx-auto max-w-[380px] flex-[0_1_380px] truncate rounded-md px-2.5 py-0.5 text-center text-[11.5px]"
-                style={{ background: colors.titleBg, color: colors.titleText }}
-              >
-                {title}
-              </span>
-              <RotateCw
-                className="size-3"
-                style={{ color: colors.titleText }}
-              />
-            </div>
-          )}
-
-          <div
-            ref={mediaRef}
-            className="wd-scope relative select-none overflow-hidden"
-            style={{
-              width: media.width,
-              height: media.height,
-              background: colors.stage,
-            }}
-          >
-            {/* Always mounted so clip playback / trim previews can seek it at any time. */}
-            <video
-              ref={videoRef}
-              src={videoUrl}
-              muted
-              playsInline
-              preload="auto"
-              className={cn(
-                "pointer-events-none absolute inset-0 size-full object-contain",
-                data?.kind !== "video" && "invisible",
               )}
-            />
 
-            {data?.kind === "photo" && data.imageUrl && (
-              <img
-                key={data.imageUrl}
-                src={data.imageUrl}
-                alt=""
-                draggable={false}
-                className="pointer-events-none absolute inset-0 size-full object-contain animate-in fade-in-0 duration-200"
-              />
-            )}
-
-            {photoPending && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(90deg,transparent,var(--color-muted),transparent)] bg-size-[200%_100%]" />
-                <span className="relative flex items-center gap-2 text-xs text-muted-foreground">
-                  <LoaderCircle className="size-3.5 animate-spin" />
-                  Extracting frame…
-                </span>
-              </div>
-            )}
-
-            {data && !photoPending && (
-              <>
-                <CameraLayer
-                  panZoom={panZoom}
-                  active={tool === "camera"}
-                  mediaRef={mediaRef}
-                  onChange={onPanZoomChange}
+              <div
+                ref={mediaRef}
+                className="wd-scope relative select-none overflow-hidden"
+                style={{
+                  width: media.width,
+                  height: media.height,
+                  background: colors.stage,
+                }}
+              >
+                {/* Always mounted so clip playback / trim previews can seek it at any time. */}
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  muted
+                  playsInline
+                  preload="auto"
+                  className={cn(
+                    "pointer-events-none absolute inset-0 size-full object-contain",
+                    data?.kind !== "video" && "invisible",
+                  )}
                 />
-                {data.kind === "photo" && hotspot && tool === "hotspot" && (
-                  <div
-                    aria-hidden
-                    // distinct from the HotspotLayer's key below: siblings sharing a key make
-                    // React lose track of which is which and leave old layers behind
-                    key={`spotlight-${step?.id}`}
-                    className="wd-spotlight"
-                    style={
-                      {
-                        "--wd-spot-x": `${hotspot.x * media.width}px`,
-                        "--wd-spot-y": `${hotspot.y * media.height}px`,
-                      } as React.CSSProperties
-                    }
+
+                {data?.kind === "photo" && data.imageUrl && (
+                  <img
+                    key={data.imageUrl}
+                    src={data.imageUrl}
+                    alt=""
+                    draggable={false}
+                    className="pointer-events-none absolute inset-0 size-full object-contain animate-in fade-in-0 duration-200"
                   />
                 )}
-                {data.kind === "photo" && (
-                  <HotspotLayer
-                    key={`hotspot-${step?.id}`}
-                    hotspot={hotspot}
-                    editable={tool === "hotspot"}
-                    mediaRef={mediaRef}
-                    mediaSize={media}
-                    onChange={onHotspotChange}
-                  />
+
+                {photoPending && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="absolute inset-0 animate-shimmer bg-[linear-gradient(90deg,transparent,var(--color-muted),transparent)] bg-size-[200%_100%]" />
+                    <span className="relative flex items-center gap-2 text-xs text-muted-foreground">
+                      <LoaderCircle className="size-3.5 animate-spin" />
+                      Extracting frame…
+                    </span>
+                  </div>
                 )}
-              </>
-            )}
+
+                {data && !photoPending && (
+                  <>
+                    <CameraLayer
+                      panZoom={panZoom}
+                      active={tool === "camera"}
+                      mediaRef={mediaRef}
+                      onChange={onPanZoomChange}
+                    />
+                    {data.kind === "photo" && hotspot && tool === "hotspot" && (
+                      <div
+                        aria-hidden
+                        // distinct from the HotspotLayer's key below: siblings sharing a key make
+                        // React lose track of which is which and leave old layers behind
+                        key={`spotlight-${step?.id}`}
+                        className="wd-spotlight"
+                        style={
+                          {
+                            "--wd-spot-x": `${hotspot.x * media.width}px`,
+                            "--wd-spot-y": `${hotspot.y * media.height}px`,
+                          } as React.CSSProperties
+                        }
+                      />
+                    )}
+                    {data.kind === "photo" && (
+                      <HotspotLayer
+                        key={`hotspot-${step?.id}`}
+                        hotspot={hotspot}
+                        editable={tool === "hotspot"}
+                        mediaRef={mediaRef}
+                        mediaSize={media}
+                        onChange={onHotspotChange}
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

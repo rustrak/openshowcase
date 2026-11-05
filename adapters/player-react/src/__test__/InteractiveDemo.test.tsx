@@ -103,6 +103,33 @@ describe("<InteractiveDemo />", () => {
     expect(container.querySelector(".openshowcase-player")).toBe(player);
   });
 
+  it("overrides the demo's wrapper and backdrop, live and without remounting", async () => {
+    root.render(
+      <InteractiveDemo demo={demo} wrapper="browser" backdrop={null} />,
+    );
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame--browser")).not.toBeNull(),
+    );
+    const player = container.querySelector(".openshowcase-player");
+    expect(container.querySelector(".frame-backdrop--on")).toBeNull();
+
+    root.render(
+      <InteractiveDemo
+        demo={demo}
+        wrapper="bezel"
+        backdrop={{ color: "#ff0000", fill: "glow" }}
+      />,
+    );
+
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame--bezel")).not.toBeNull(),
+    );
+    await vi.waitFor(() =>
+      expect(container.querySelector(".frame-backdrop--glow")).not.toBeNull(),
+    );
+    expect(container.querySelector(".openshowcase-player")).toBe(player);
+  });
+
   it("plays a single-file bundle", async () => {
     const bundle = await buildDemoBundle({
       demo,

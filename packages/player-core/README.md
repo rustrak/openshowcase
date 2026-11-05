@@ -43,6 +43,8 @@ loaded.dispose(); // stops the download and frees the bundle's asset URLs
 | `assetBaseUrl` | `string` | Prefix for relative image/video paths. |
 | `resolveAsset` | `(src) => string \| Promise<string>` | Serves asset URLs instead of `assetBaseUrl` (pass `loadDemo()`'s for a bundle). |
 | `appearance` | `"light" \| "dark" \| "auto"` | Overrides the demo's light/dark appearance (browser frame, background, controls), e.g. to follow your site's mode; `"auto"` follows the viewer's `prefers-color-scheme`. Changes apply live, without restarting the demo. |
+| `wrapper` | `"none" \| "browser" \| "bezel"` | Overrides the demo's wrapper. Changes apply live. |
+| `backdrop` | `{ color: string; fill?: "solid" \| "soft" \| "glow"; padding?: number } \| null` | Overrides the demo's backdrop as a whole: a colored surface with the wrapper centered on it, `padding` being its margin in % of the player's width (0–25, default 5). `null` removes it. Changes apply live. |
 | `startWhenVisible` | `boolean` | Holds playback (clip, zoom, hotspot) until the player is at least half on screen, showing its first step meanwhile. For a demo below the fold, or several on one page. Default `false`. Read at mount. |
 | `hotspotStyle` | `{ bgColor?: string; textColor?: string }` | Overrides every step's hotspot/tooltip colors, e.g. to force your brand color whatever the demo was recorded with. Changes apply live. |
 | `onStepChange` | `(index, step) => void` | Called on every step change. |
@@ -51,7 +53,7 @@ loaded.dispose(); // stops the download and frees the bundle's asset URLs
 
 `loadDemo(src, { assetBaseUrl?, signal? })` fetches a demo and tells a bundle from a `steps.json` by its first bytes. It resolves as soon as the demo is known; a bundle's assets keep downloading in the one request, each served as soon as it arrives.
 
-Methods: `mount()`, `destroy()`, `next()`, `prev()`, `goTo(index)`, `setAppearance(appearance)`, `setHotspotStyle(style)` (both live, without remounting). Getters: `currentIndex`, `currentStep`.
+Methods: `mount()`, `destroy()`, `next()`, `prev()`, `goTo(index)`, `setAppearance(appearance)`, `setWrapper(wrapper)`, `setBackdrop(backdrop)`, `setHotspotStyle(style)` (all live, without remounting). Getters: `currentIndex`, `currentStep`.
 
 The player's styles are scoped under `.openshowcase-player` and don't reset the host page.
 

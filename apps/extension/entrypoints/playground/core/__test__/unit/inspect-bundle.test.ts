@@ -7,7 +7,12 @@ const demo: Demo = {
   id: "d1",
   title: "Onboarding",
   video: { src: "rec.webm", width: 3000, height: 1790, durationSec: 7.5 },
-  theme: { wrapper: "browser", autoplay: true, appearance: "dark" },
+  theme: {
+    wrapper: "bezel",
+    backdrop: { color: "#4F46E5", fill: "glow", padding: 7 },
+    autoplay: true,
+    appearance: "dark",
+  },
   steps: [
     { id: "v1", type: "video", startTime: 0, endTime: 4 },
     {
@@ -40,7 +45,7 @@ describe("inspectBundle", () => {
       videoSec: 7.5,
       width: 3000,
       height: 1790,
-      browserChrome: true,
+      theme: demo.theme,
     });
     if (!inspected.ok) throw new Error("expected a valid bundle");
     expect(inspected.summary.parts.map((p) => [p.kind, p.size])).toEqual([

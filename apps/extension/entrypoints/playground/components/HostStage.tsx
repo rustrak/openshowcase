@@ -1,8 +1,9 @@
 import { InteractiveDemo } from "@rustrak/openshowcase-player-react";
+import type { Theme } from "@rustrak/openshowcase-schema";
 import { useRef } from "react";
 import { useElementSize } from "@/hooks/use-element-size";
 import { fitStage } from "../../editor/core/stage-fit";
-import { BROWSER_CHROME_HEIGHT } from "../../editor/lib/player-appearance";
+import { frameSize } from "../../editor/lib/player-appearance";
 
 /** Background of the simulated site the demo is embedded in (demo content, not editor UI). */
 export const HOST_BACKGROUNDS = { light: "#ffffff", dark: "#0d1117" } as const;
@@ -17,14 +18,14 @@ const PAGE_PADDING = 24;
 export function HostStage({
   url,
   aspectRatio,
-  browserChrome,
+  theme,
   background,
   run,
 }: {
   url: string;
   /** Of the demo's media (its frame excluded). */
   aspectRatio: number;
-  browserChrome: boolean;
+  theme: Theme;
   background: HostBackground;
   /** Bumped to replay the demo from scratch. */
   run: number;
@@ -33,10 +34,10 @@ export function HostStage({
   const well = useElementSize(wellRef);
   // As big as the stage allows, in both directions, around the page's padding
   const margin = 2 * PAGE_PADDING + 48;
-  const { width } = fitStage(
+  const { outerWidth: width } = fitStage(
     { width: well.width - margin, height: well.height - margin },
     aspectRatio,
-    browserChrome ? BROWSER_CHROME_HEIGHT : 0,
+    frameSize(theme),
   );
 
   return (

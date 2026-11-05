@@ -32,7 +32,7 @@ try {
 
 ## Format overview
 
-A `Demo` has an `id`, a `title`, an optional continuous `video` recording, a `theme` (`wrapper`, `autoplay`, `appearance`) and a list of `steps`:
+A `Demo` has an `id`, a `title`, an optional continuous `video` recording, a `theme` (`wrapper`, an optional `backdrop`, `autoplay`, `appearance`) and a list of `steps`:
 
 - **Photo step** (`type: "photo"`): a still frame with an optional `hotspot` (position as 0–1 fractions, tooltip label, colors) and an optional `panZoom`. Playback waits until the viewer clicks the hotspot.
 - **Video step** (`type: "video"`): a `startTime`–`endTime` clip of the demo's recording that plays and advances on its own.

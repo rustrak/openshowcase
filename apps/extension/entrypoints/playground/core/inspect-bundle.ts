@@ -1,5 +1,5 @@
 import { readStoredZip } from "@rustrak/openshowcase-player-core";
-import { parseDemo } from "@rustrak/openshowcase-schema";
+import { parseDemo, type Theme } from "@rustrak/openshowcase-schema";
 import { type BundleFile, summarizeBundle } from "./bundle-summary";
 
 export type InspectedBundle =
@@ -12,8 +12,8 @@ export type InspectedBundle =
       videoSec: number;
       width: number;
       height: number;
-      /** The demo draws a browser frame around itself. */
-      browserChrome: boolean;
+      /** Its frame takes room around the media. */
+      theme: Theme;
       summary: ReturnType<typeof summarizeBundle>;
     }
   | { ok: false; error: string };
@@ -45,7 +45,7 @@ export async function inspectBundle(file: Blob): Promise<InspectedBundle> {
       videoSec: demo.video?.durationSec ?? 0,
       width: demo.video?.width ?? firstPhoto?.image.width ?? 0,
       height: demo.video?.height ?? firstPhoto?.image.height ?? 0,
-      browserChrome: demo.theme.wrapper === "browser",
+      theme: demo.theme,
       summary: summarizeBundle(files),
     };
   } catch (error) {

@@ -1,4 +1,9 @@
-import type { Demo, Step } from "@rustrak/openshowcase-schema";
+import type {
+  Backdrop,
+  Demo,
+  Step,
+  ThemeWrapper,
+} from "@rustrak/openshowcase-schema";
 import type { AssetResolver } from "./core/load-demo";
 import type { HotspotStyle } from "./core/photo-overlay";
 import { mount as mountView } from "./dom/h";
@@ -20,6 +25,10 @@ export interface PlayerOptions {
   /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode, or
    * `"auto"` to follow the viewer's `prefers-color-scheme`. */
   appearance?: PlayerAppearance;
+  /** Overrides the demo's wrapper: `"none"`, `"browser"` or `"bezel"`. */
+  wrapper?: ThemeWrapper;
+  /** Overrides the demo's backdrop (color, fill, padding) as a whole; `null` removes it. */
+  backdrop?: Backdrop | null;
   /** Holds playback until the player is at least half on screen (shows its first step
    * meanwhile), e.g. for a demo below the fold or several on one page. */
   startWhenVisible?: boolean;
@@ -48,6 +57,8 @@ export class Player {
       resolveAsset,
       hotspotStyle,
       appearance,
+      wrapper,
+      backdrop,
       startWhenVisible,
       onStepChange,
     } = this.options;
@@ -59,6 +70,8 @@ export class Player {
         resolveAsset,
         hotspotStyle,
         appearance,
+        wrapper,
+        backdrop,
         startWhenVisible,
         onStepChange,
       });
@@ -91,6 +104,18 @@ export class Player {
   setAppearance(appearance: PlayerAppearance | undefined): void {
     this.options.appearance = appearance;
     this.view?.setAppearance(appearance);
+  }
+
+  /** Switches the wrapper without remounting (`undefined`: back to the demo's own). */
+  setWrapper(wrapper: ThemeWrapper | undefined): void {
+    this.options.wrapper = wrapper;
+    this.view?.setWrapper(wrapper);
+  }
+
+  /** Swaps the backdrop without remounting (`undefined`: the demo's own; `null`: none). */
+  setBackdrop(backdrop: Backdrop | null | undefined): void {
+    this.options.backdrop = backdrop;
+    this.view?.setBackdrop(backdrop);
   }
 
   /** Swaps the hotspot/tooltip color override without remounting. */

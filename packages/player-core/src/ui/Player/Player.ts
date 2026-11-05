@@ -1,9 +1,12 @@
-import type {
-  Demo,
-  PhotoStep,
-  Step,
-  ThemeAppearance,
-  VideoStep,
+import {
+  type Backdrop,
+  type Demo,
+  defaultBackdrop,
+  type PhotoStep,
+  type Step,
+  type ThemeAppearance,
+  type ThemeWrapper,
+  type VideoStep,
 } from "@rustrak/openshowcase-schema";
 import { loadVideoSrc, resolveAssetUrl } from "../../core/asset-loader";
 import {
@@ -32,8 +35,8 @@ import {
   startVideoStep,
   whenAtTime,
 } from "../../core/video-step";
-import { batch, cx, h } from "../../dom/h";
-import { signal } from "../../dom/signals";
+import { batch, cx, h, show } from "../../dom/h";
+import { effect, signal } from "../../dom/signals";
 import { injectStyles } from "../../dom/styles";
 import { BrowserChrome } from "../BrowserChrome/BrowserChrome";
 import { Navbar, type NavbarSegment } from "../Navbar/Navbar";
@@ -57,6 +60,10 @@ export interface PlayerViewOptions {
   hotspotStyle?: HotspotStyle;
   /** Overrides the demo's light/dark appearance, e.g. to follow the host page's mode. */
   appearance?: PlayerAppearance;
+  /** Overrides the demo's wrapper. */
+  wrapper?: ThemeWrapper;
+  /** Overrides the demo's backdrop; `null` removes it. */
+  backdrop?: Backdrop | null;
   /** Shows the first step but holds its playback (clip, zoom, hotspot) until the player
    * is at least half on screen, e.g. for a demo below the fold. */
   startWhenVisible?: boolean;
@@ -79,6 +86,10 @@ export interface PlayerView {
   goTo(index: number): void;
   /** Live: no remount, the current step keeps playing. `undefined` goes back to the demo's. */
   setAppearance(appearance: PlayerAppearance | undefined): void;
+  /** Live: no remount. `undefined` goes back to the demo's. */
+  setWrapper(wrapper: ThemeWrapper | undefined): void;
+  /** Live: no remount. `undefined` goes back to the demo's, `null` removes it. */
+  setBackdrop(backdrop: Backdrop | null | undefined): void;
   /** Live: the hotspot/tooltip on screen recolors at once. */
   setHotspotStyle(style: HotspotStyle | undefined): void;
   currentIndex(): number;
@@ -124,6 +135,8 @@ export function createPlayerView({
   resolveAsset = (src) => resolveAssetUrl(src, assetBaseUrl),
   hotspotStyle,
   appearance: appearanceOverride,
+  wrapper: wrapperOverride,
+  backdrop: backdropOverride,
   startWhenVisible = false,
   onStepChange,
 }: PlayerViewOptions): PlayerView {
@@ -151,6 +164,13 @@ export function createPlayerView({
   const isDark = () => {
     const value = appearance() ?? demo.theme.appearance;
     return value === "auto" ? systemDark() : value === "dark";
+  };
+  const wrapper = signal(wrapperOverride);
+  const currentWrapper = () => wrapper() ?? demo.theme.wrapper;
+  const backdrop = signal(backdropOverride);
+  const currentBackdrop = () => {
+    const value = backdrop();
+    return value === undefined ? demo.theme.backdrop : value;
   };
   const stageSize = signal({ width: 0, height: 0 });
 
@@ -537,13 +557,69 @@ export function createPlayerView({
     }),
   );
 
+  const backdropEl = h(
+    "div",
+    {
+      class: () => {
+        const value = currentBackdrop();
+        const fill = value?.fill ?? defaultBackdrop.fill;
+        return cx(
+          "frame-backdrop",
+          value && "frame-backdrop--on",
+          value && fill !== "solid" && `frame-backdrop--${fill}`,
+        );
+      },
+    },
+    h(
+      "div",
+      {
+        class: () => {
+          const value = currentWrapper();
+          return cx(
+            "frame relative w-full",
+            value !== "none" && `frame--${value}`,
+          );
+        },
+      },
+      h(
+        "div",
+        {
+          class:
+            "frame-window flex w-full flex-col overflow-hidden bg-white dark:bg-[#18181b]",
+        },
+        show(
+          () => currentWrapper() !== "none",
+          () =>
+            BrowserChrome({ title: () => demo.title, onReload: () => goTo(0) }),
+        ),
+        stage,
+      ),
+    ),
+  );
+  // Custom properties, not a style attribute: a demo's color can't add declarations
+  effect(() => {
+    const value = currentBackdrop();
+    const { style } = backdropEl;
+    if (value) {
+      style.setProperty("--wd-backdrop", value.color);
+      style.setProperty(
+        "--wd-backdrop-padding",
+        String(value.padding ?? defaultBackdrop.padding),
+      );
+    } else {
+      style.removeProperty("--wd-backdrop");
+      style.removeProperty("--wd-backdrop-padding");
+    }
+  });
+
   // root needs focus + arrow-key nav, like native <video> controls
+  // No overflow clipping here: it would cut the frame's shadow
   const element = h(
     "div",
     {
       class: () =>
         cx(
-          "openshowcase-player relative block overflow-hidden leading-[1.45] select-none",
+          "openshowcase-player relative block leading-[1.45] select-none",
           isDark() && "openshowcase-player--dark",
         ),
       role: "application",
@@ -556,18 +632,7 @@ export function createPlayerView({
       onpointerdown: showNav,
       onpointerleave: hideNavSoon,
     },
-    h(
-      "div",
-      {
-        class: cx(
-          "frame relative flex w-full flex-col overflow-hidden bg-white dark:bg-[#18181b]",
-          demo.theme.wrapper === "browser" && "frame--browser",
-        ),
-      },
-      demo.theme.wrapper === "browser" &&
-        BrowserChrome({ title: () => demo.title, onReload: () => goTo(0) }),
-      stage,
-    ),
+    backdropEl,
   );
 
   let resizeObserver: ResizeObserver | undefined;
@@ -578,7 +643,8 @@ export function createPlayerView({
       layoutOverlay();
       renderStep(0, -1);
       resizeObserver = new ResizeObserver(() => layoutOverlay());
-      resizeObserver.observe(element);
+      // The stage, not the root: a backdrop or bezel resizes it at the same player width
+      resizeObserver.observe(stage);
       darkQuery.addEventListener("change", onSchemeChange);
       if (!onScreen) {
         visibility = new IntersectionObserver(
@@ -609,6 +675,12 @@ export function createPlayerView({
     goTo,
     setAppearance(value) {
       appearance(value);
+    },
+    setWrapper(value) {
+      wrapper(value);
+    },
+    setBackdrop(value) {
+      backdrop(value);
     },
     setHotspotStyle(style) {
       overlay.setStyle(style);

@@ -16,7 +16,7 @@ describe("BrowserChrome", () => {
   it("renders three window dots", async () => {
     const screen = await render({ title: "My demo" });
     expect(
-      screen.container.querySelectorAll("span.h-2\\.5.w-2\\.5"),
+      screen.container.querySelectorAll(".browser-chrome__light"),
     ).toHaveLength(3);
   });
 

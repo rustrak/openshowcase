@@ -5,7 +5,12 @@ import {
   Player,
   type PlayerAppearance,
 } from "@rustrak/openshowcase-player-core";
-import type { Demo, Step } from "@rustrak/openshowcase-schema";
+import type {
+  Backdrop,
+  Demo,
+  Step,
+  ThemeWrapper,
+} from "@rustrak/openshowcase-schema";
 import { type CSSProperties, useEffect, useRef, useState } from "react";
 
 export interface InteractiveDemoProps {
@@ -27,6 +32,11 @@ export interface InteractiveDemoProps {
   /** Overrides the demo's light/dark appearance, e.g. to follow your site's mode,
    * or `"auto"` for the viewer's `prefers-color-scheme`. Changes apply live. */
   appearance?: PlayerAppearance;
+  /** Overrides the demo's wrapper: `"none"`, `"browser"` or `"bezel"`. Changes apply live. */
+  wrapper?: ThemeWrapper;
+  /** Overrides the demo's backdrop (color, fill, padding) as a whole; `null` removes it.
+   * Changes apply live. */
+  backdrop?: Backdrop | null;
   /** Holds playback until the player is at least half on screen (shows its first step
    * meanwhile), e.g. for a demo below the fold or several on one page. */
   startWhenVisible?: boolean;
@@ -52,6 +62,8 @@ export function InteractiveDemo({
   style,
   hotspotStyle,
   appearance,
+  wrapper,
+  backdrop,
   startWhenVisible,
   onStepChange,
 }: InteractiveDemoProps) {
@@ -62,9 +74,10 @@ export function InteractiveDemo({
   const playerRef = useRef<Player>(undefined);
   // Compared by value: an inline `hotspotStyle={{...}}` is a new object every render
   const { bgColor, textColor } = hotspotStyle ?? {};
+  const backdropKey = JSON.stringify(backdrop);
   // Read at mount; later changes go through the setters below, without a remount
-  const live = useRef({ appearance, bgColor, textColor });
-  live.current = { appearance, bgColor, textColor };
+  const live = useRef({ appearance, wrapper, backdrop, bgColor, textColor });
+  live.current = { appearance, wrapper, backdrop, bgColor, textColor };
 
   useEffect(() => {
     if (demo) {
@@ -119,6 +132,8 @@ export function InteractiveDemo({
         textColor: live.current.textColor,
       },
       appearance: live.current.appearance,
+      wrapper: live.current.wrapper,
+      backdrop: live.current.backdrop,
       startWhenVisible,
       onStepChange,
     });
@@ -133,6 +148,15 @@ export function InteractiveDemo({
   useEffect(() => {
     playerRef.current?.setAppearance(appearance);
   }, [appearance]);
+
+  useEffect(() => {
+    playerRef.current?.setWrapper(wrapper);
+  }, [wrapper]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: by value, as `backdropKey`: an inline `backdrop={{...}}` is a new object every render
+  useEffect(() => {
+    playerRef.current?.setBackdrop(live.current.backdrop);
+  }, [backdropKey]);
 
   useEffect(() => {
     playerRef.current?.setHotspotStyle({ bgColor, textColor });

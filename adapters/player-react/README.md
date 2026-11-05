@@ -36,6 +36,8 @@ In SSR frameworks (Next.js App Router, etc.) render it from a client component (
 | `aspectRatio` | `number` | Width/height ratio used while the container has no explicit height. Defaults to `16 / 9`. |
 | `className` / `style` | | Applied to the container. |
 | `appearance` | `"light" \| "dark" \| "auto"` | Overrides the demo's light/dark appearance (browser frame, background, controls), e.g. to follow your site's mode; `"auto"` follows the viewer's `prefers-color-scheme`. Changes apply live, without restarting the demo. |
+| `wrapper` | `"none" \| "browser" \| "bezel"` | Overrides the demo's wrapper. Changes apply live. |
+| `backdrop` | `{ color: string; fill?: "solid" \| "soft" \| "glow"; padding?: number } \| null` | Overrides the demo's backdrop as a whole: a colored surface with the wrapper centered on it, `padding` being its margin in % of the player's width (0–25, default 5). `null` removes it. Changes apply live. |
 | `startWhenVisible` | `boolean` | Holds playback (clip, zoom, hotspot) until the player is at least half on screen, showing its first step meanwhile. For a demo below the fold, or several on one page. Default `false`. Read at mount. |
 | `hotspotStyle` | `{ bgColor?: string; textColor?: string }` | Overrides every step's hotspot/tooltip colors, e.g. to force your brand color whatever the demo was recorded with. Changes apply live. |
 | `onStepChange` | `(index: number, step: Step) => void` | Called on every step change. |

@@ -505,8 +505,8 @@ export function Editor({
             onTabChange={setInspectorTab}
             stepProps={stepProps}
             theme={theme}
-            onThemeChange={(next: Theme) =>
-              commit((d) => ({ ...d, theme: next }))
+            onThemeChange={(next: Theme, coalesceKey?: string) =>
+              commit((d) => ({ ...d, theme: next }), coalesceKey)
             }
           />
         )}
