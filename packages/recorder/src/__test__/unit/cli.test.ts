@@ -29,6 +29,31 @@ describe("parseCommand", () => {
     });
   });
 
+  it("exports a recording to the given path", () => {
+    expect(
+      parseCommand(["export", "demos/x.osrec", "--out", "public/demos/x.zip"]),
+    ).toEqual({
+      command: "export",
+      file: resolve("demos/x.osrec"),
+      out: resolve("public/demos/x.zip"),
+      extensionDir: BUNDLED_EXTENSION_DIR,
+      headed: false,
+    });
+  });
+
+  it("names the export after the recording by default", () => {
+    expect(parseCommand(["export", "demos/x.osrec"])).toMatchObject({
+      out: resolve("x.openshowcase"),
+    });
+  });
+
+  it("refuses an export path that isn't a demo file", () => {
+    expect(() =>
+      parseCommand(["export", "x.osrec", "--out", "public/demos"]),
+    ).toThrow(/\.openshowcase or \.zip/);
+    expect(() => parseCommand(["export"])).toThrow(/recording/);
+  });
+
   it("opens a recording in the review browser", () => {
     expect(parseCommand(["open", "demos/x.osrec"])).toEqual({
       command: "open",

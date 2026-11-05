@@ -21,11 +21,12 @@ export interface OpenOptions {
 }
 
 /**
- * Opens the recording in the extension's editor, in a separate Chromium that outlives this
- * command: a plain browser (not automated), so downloads and the playground work as usual and
- * recordings stay in its profile. The file goes into the studio's own copy of the extension,
- * which the editor imports from (`?import=`, see the extension's core/import-source.ts). If the
- * studio is already open, Chromium hands the URL to it as a new tab.
+ * Opens the recording in the extension's editor, on its Preview (the demo as it will ship: this
+ * is for reviewing it), in a separate Chromium that outlives this command: a plain browser (not
+ * automated), so downloads and the playground work as usual and recordings stay in its profile.
+ * The file goes into the studio's own copy of the extension, which the editor imports from
+ * (`?import=`, see the extension's core/import-source.ts). If the studio is already open,
+ * Chromium hands the URL to it as a new tab.
  */
 export async function openInStudio(
   file: string,
@@ -47,7 +48,7 @@ export async function openInStudio(
   await copyFile(file, join(imports, name));
 
   const realExtension = realpathSync(extensionDir);
-  const url = `chrome-extension://${extensionIdForPath(realExtension)}/editor.html?import=imports/${name}`;
+  const url = `chrome-extension://${extensionIdForPath(realExtension)}/editor.html?import=imports/${name}&view=preview`;
   const spawn = options.spawn ?? nodeSpawn;
   spawn(
     options.executablePath ?? chromium.executablePath(),

@@ -48,7 +48,7 @@ describe("openInStudio", () => {
 
     const id = extensionIdForPath(realpathSync(studioExtension));
     expect(url).toBe(
-      `chrome-extension://${id}/editor.html?import=imports/Factura-de-venta.osrec`,
+      `chrome-extension://${id}/editor.html?import=imports/Factura-de-venta.osrec&view=preview`,
     );
     expect(calls).toHaveLength(1);
     expect(calls[0]?.command).toBe("/bin/chromium");

@@ -2,6 +2,7 @@ import { homedir } from "node:os";
 import { basename, extname, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
 import { BUNDLED_EXTENSION_DIR, DEFAULT_PROFILE_DIR } from "./browser";
+import { exportDemo } from "./export";
 import { loadFlow } from "./flow";
 import { formatInspection, inspect } from "./inspect";
 import { BUNDLED_SKILL_DIR, installSkill } from "./install-skill";
@@ -21,8 +22,13 @@ Usage:
       Record the flow in a headless Chromium, paced for the camera, with a
       visible cursor. --open then opens it for review (see open).
   openshowcase-recorder open <file.osrec>
-      Open a recording in the OpenShowcase editor, in a separate review browser
-      that stays open (your recordings are kept there). Returns right away.
+      Open a recording in the OpenShowcase editor, on its Preview, in a separate
+      review browser that stays open (your recordings are kept there). Returns
+      right away.
+  openshowcase-recorder export <file.osrec> [--out <demo.openshowcase|demo.zip>]
+      Build the demo of a recording as it stands and save it there, creating the
+      folders it needs. Export once the demo is approved: edits made by hand in
+      the review browser are not in the recording, so they don't reach this file.
   openshowcase-recorder login <url>
       Open a window on the recording profile to sign in once. Close it when done.
 
@@ -57,6 +63,13 @@ export type Command =
       open: boolean;
     } & BrowserOptions)
   | { command: "open"; file: string; extensionDir: string }
+  | {
+      command: "export";
+      file: string;
+      out: string;
+      extensionDir: string;
+      headed: boolean;
+    }
   | ({
       command: "inspect";
       flow: string;
@@ -109,6 +122,23 @@ export function parseCommand(argv: string[]): Command {
         file: resolve(arg),
         extensionDir: browser.extensionDir,
       };
+    case "export": {
+      if (!arg) throw new UsageError("export needs a recording (.osrec)");
+      const out = expandHome(
+        values.out ?? `${basename(arg, extname(arg))}.openshowcase`,
+      );
+      if (![".openshowcase", ".zip"].includes(extname(out)))
+        throw new UsageError(
+          `--out must be a .openshowcase or .zip file, not "${out}"`,
+        );
+      return {
+        command,
+        file: resolve(expandHome(arg)),
+        out: resolve(out),
+        extensionDir: browser.extensionDir,
+        headed: browser.headed,
+      };
+    }
     case "inspect":
       if (!arg) throw new UsageError("inspect needs a flow file or a URL");
       return {
@@ -182,6 +212,11 @@ export async function run(argv: string[]): Promise<number> {
         await openInStudio(command.file, command);
         log(`Opened ${command.file} in the review browser.`);
         return 0;
+      case "export": {
+        const result = await exportDemo(command.file, { ...command, log });
+        log(`Exported → ${result.out} (${(result.bytes / 1e6).toFixed(1)} MB)`);
+        return 0;
+      }
       case "inspect": {
         const flow = await loadFlow(command.flow);
         const inspection = await inspect(flow, command);

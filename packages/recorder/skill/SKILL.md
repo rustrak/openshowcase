@@ -5,7 +5,7 @@ description: Record an interactive product demo of a web app flow with OpenShowc
 
 # Record an OpenShowcase demo
 
-You direct a short interactive user guide: you script the flow as a JSON file, check it against the real app, and record it in a headless Chromium with a human-looking cursor. The user reviews the result in the OpenShowcase editor and polishes what doesn't convince them. Recording runs in the background and never touches the user's own browser.
+You direct a short interactive user guide: you script the flow as a JSON file, check it against the real app, and record it in a headless Chromium with a human-looking cursor. The user watches the result in a review browser, and tells you what to change or that it's good. When they approve it, you export it to where it belongs in their project: they shouldn't have to download anything. Recording and exporting run in the background and never touch the user's own browser.
 
 The tool is a CLI. If `command -v openshowcase-recorder` finds it, run it as `openshowcase-recorder <command>`; otherwise `npx @rustrak/openshowcase-recorder <command>`. Below, `osr` stands for whichever works. If it says Chromium is missing, run `npx playwright install chromium` once.
 
@@ -21,7 +21,7 @@ A user guide nobody finishes is worthless. Think like a video editor, not a test
 - **No dead time.** Every `wait` is cut out of the video automatically, and so is time spent waiting for a target to appear or a page to load. So wait for the app freely (`{ "action": "wait", "for": <target> }` is best), but never use a wait to "show" something: the step's own pause and the final shot do that.
 - **Framing is automatic.** Before using a target near the top or bottom edge, the recorder scrolls it to the middle of the screen with a smooth scroll. Add a `scroll` step only to show something on purpose (e.g. the totals at the end).
 - **Realistic, made-up data**, short values (typing takes screen time).
-- **Name it.** Give the flow a `title`: what the viewer learns to do, as a short task in their language and the app's own words ("Create an invoice", "Invite a teammate"). 2–5 words, no app name, no "Demo of…" or "How to…". It's the demo's name in the editor, shown in the player's browser bar and used as the export's file name.
+- **Name it.** Give the flow a `title`: what the viewer learns to do, as a short task in their language and the app's own words ("Create an invoice", "Invite a teammate"). 2–5 words, no app name, no "Demo of…" or "How to…". It's the demo's name, shown in the player's browser bar.
 
 ## Workflow
 
@@ -39,9 +39,22 @@ A user guide nobody finishes is worthless. Think like a video editor, not a test
 
 6. **Check it end to end.** `osr inspect demos/<name>.flow.json` must report `Steps: all N ran`.
 
-7. **Record and open it.** `osr record demos/<name>.flow.json --out demos/<name>.osrec --open`. It prints the demo's size: `Demo: N hotspot steps, about Xs of video after cutting Ys of waiting`. If it's over ~40s or has more than ~8 hotspots, tighten the flow (step 5) and record again. `--open` opens the recording in the OpenShowcase editor, in a separate review browser that stays open: tell the user it's there to review, tweak (text, zoom, trims) and export. `osr open <file.osrec>` reopens any recording.
+7. **Record and open it.** `osr record demos/<name>.flow.json --out demos/<name>.osrec --open`. It prints the demo's size: `Demo: N hotspot steps, about Xs of video after cutting Ys of waiting`. If it's over ~40s or has more than ~8 hotspots, tighten the flow (step 5) and record again. `--open` opens the demo in a separate review browser that stays open, right on its Preview, playing as it will ship. `osr open <file.osrec>` reopens any recording.
 
-When the app's UI changes, re-run steps 6 and 7 with the same flow: the flow is the source of truth for the demo.
+8. **Ask for the verdict, and stop.** Tell the user the demo is playing in the review browser and ask them to watch it and tell you if it's good or what to change. **Never export before they approve this recording**: the decision is theirs, and an approval of an earlier take doesn't count.
+   - **Something to change** (a tooltip, a zoom, too long, a missing step): change the flow, then go back to steps 6 and 7. Do this rather than asking them to edit: the flow stays the source of truth, and the next export carries it.
+   - **It's good**: go to step 9.
+   - **They edited it by hand** in the review browser (its Edit tab: text, zoom, trims): those edits live only in that tab, not in the `.osrec`, so `osr export` would silently lose them. Either they export it themselves with its Export button, or you put the same changes in the flow and record again. If you can't tell whether they edited it, ask.
+
+9. **Export it to the right place.** Decide where it belongs: the path the user asked for, or else where the project already keeps its demos (look for existing `*.openshowcase` files, or the folder its `InteractiveDemo src` values point at). Static files usually go under `public/`, and `public/demos/<name>.openshowcase` is the convention if it has none yet. If it isn't clear, ask. If a file is already there and this isn't a new take of that same demo, ask before replacing it.
+
+   `osr export demos/<name>.osrec --out public/demos/<name>.openshowcase`
+
+   It builds the same file as the editor's Export button (frames and video re-encoded for the web), and creates the folders it needs. Encoding can take a while on a long recording: let it finish. A `Warning:` in its output means the video couldn't be re-encoded and the whole recording shipped instead: tell the user. Use `.zip` for `--out` only if they want it unpacked next to their static files.
+
+10. **Hand it over.** Say where the file is and how big it is. If the project doesn't embed it yet, show how, with the `src` being its public URL: `<InteractiveDemo src="/demos/<name>.openshowcase" />` from `@rustrak/openshowcase-player-react` (or `-vue`). The `.osrec` and the flow are the sources for the next take: leave them, and don't commit the `.osrec` unless the project already does (it's the full recording, and large).
+
+When the app's UI changes, re-run steps 6 to 9 with the same flow: the flow is the source of truth for the demo.
 
 ## Flow format
 
@@ -91,4 +104,5 @@ Add `"exact": true` for a case-sensitive whole-string match, and `"nth": 0` (0-b
 - **The page shows a login screen**: run `osr login <url>` (step 2).
 - **`record` fails while `inspect` works** (errors mentioning the worker, the extension or the capture): that's the recorder, not your flow. Don't change the viewport or the steps to work around it; stop and report the exact error to the user.
 - **Pages need a specific state** (empty list, a draft): add steps that create it before the part you want to show, or ask the user to prepare the account.
-- `--headed` on `inspect` or `record` shows the browser window, to watch what happens.
+- **`export` fails** ("Export failed", or a timeout): that's the export, not your flow. Don't re-record to work around it; report the exact error to the user. They can still export from the review browser.
+- `--headed` on `inspect`, `record` or `export` shows the browser window, to watch what happens.

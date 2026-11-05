@@ -7,6 +7,7 @@ import {
   type PanZoom,
   type Theme,
 } from "@rustrak/openshowcase-schema";
+import { LoaderCircle } from "lucide-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { browser } from "wxt/browser";
@@ -23,6 +24,7 @@ import { Stage } from "./components/stage/Stage";
 import { type StageTool, StageToolbar } from "./components/stage/StageToolbar";
 import { type EditorMode, TopBar } from "./components/TopBar";
 import { type ExportFormat, exportFileName } from "./core/export-format";
+import { opensInPreview } from "./core/import-source";
 import { photoEncoding } from "./core/photo-encoding";
 import { MIN_CLIP_SEC } from "./core/sequence-layout";
 import * as StepEditor from "./core/step-editor";
@@ -70,7 +72,9 @@ export function Editor({
   const { steps, theme, title } = doc;
 
   const [selectedId, setSelectedId] = useState(initialSteps[0]?.id ?? null);
-  const [mode, setMode] = useState<EditorMode>("edit");
+  const [mode, setMode] = useState<EditorMode>(() =>
+    opensInPreview(window.location.search) ? "preview" : "edit",
+  );
   const [tool, setTool] = useState<StageTool>("hotspot");
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("step");
   const [exportOpen, setExportOpen] = useState(false);
@@ -273,16 +277,16 @@ export function Editor({
     const width = recording.width ?? 0;
     const height = recording.height ?? 0;
     if (!width || !height) return undefined;
-    const ready = steps.filter(
-      (s) => s.data.kind !== "photo" || s.data.imageUrl,
-    );
-    if (ready.length === 0) return undefined;
+    // Not until every frame is extracted: an export would silently lack those photo steps,
+    // and a preview would restart with each one that arrives.
+    if (steps.some((s) => s.data.kind === "photo" && !s.data.imageUrl))
+      return undefined;
     return {
       id: recordingId,
       title,
       video: { src: videoUrl, width, height, durationSec: duration },
       theme,
-      steps: ready.map((s) => toSchemaStep(s, { width, height })),
+      steps: steps.map((s) => toSchemaStep(s, { width, height })),
     };
   }, [steps, theme, title, recording, videoUrl, duration, recordingId]);
 
@@ -429,6 +433,11 @@ export function Editor({
 
       <div className="flex min-h-0 flex-1 gap-2 px-2 pb-2">
         <div className="flex min-w-0 flex-1 flex-col gap-2">
+          {mode === "preview" && !previewDemo && (
+            <div className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-stage shadow-card">
+              <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+            </div>
+          )}
           {mode === "preview" && previewDemo && (
             <PreviewStage
               demo={previewDemo}

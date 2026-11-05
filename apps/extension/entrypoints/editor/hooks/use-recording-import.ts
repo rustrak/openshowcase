@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { importRecording } from "@/lib/db";
 import { unpackRecording } from "@/lib/recording-file";
+import { importedRecordingQuery } from "../core/import-source";
 
 /**
  * Imports an `.osrec` file into the database, then reopens the editor on it. `packaged` is a
@@ -16,7 +17,9 @@ export function useRecordingImport(packaged?: string) {
       const recordingId = await importRecording(
         await unpackRecording(await load()),
       );
-      window.location.replace(`?recordingId=${recordingId}`);
+      window.location.replace(
+        importedRecordingQuery(recordingId, window.location.search),
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
       setImporting(false);

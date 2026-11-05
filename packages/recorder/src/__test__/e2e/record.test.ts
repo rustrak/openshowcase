@@ -11,6 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { extensionIdForPath, launch } from "../../browser";
+import { exportDemo } from "../../export";
 import { parseFlow } from "../../flow";
 import { inspect } from "../../inspect";
 import { openInStudio } from "../../open";
@@ -306,9 +307,19 @@ describe("direction", () => {
       const id = extensionIdForPath(
         realpathSync(join(work, "studio", "extension")),
       );
-      studioUrl = `chrome-extension://${id}/editor.html?import=imports/directed.osrec`;
+      studioUrl = `chrome-extension://${id}/editor.html?import=imports/directed.osrec&view=preview`;
       await page.goto(studioUrl);
-      await page.waitForURL(/recordingId=/);
+      await page.waitForURL(/recordingId=.*view=preview/);
+      // Right on the Preview, the real player with every frame, not the editing stage
+      await page.locator(".openshowcase-player").waitFor({ timeout: 15_000 });
+      await expect
+        .poll(() => page.locator(".wd-scope").isVisible())
+        .toBe(false);
+      await expect
+        .poll(() => page.getByRole("radio", { name: "Preview" }).isChecked())
+        .toBe(true);
+
+      await page.getByRole("radio", { name: "Edit" }).click();
       const steps = page.getByLabel(/^Step \d+\. Drag to reorder$/);
       // One photo (Save). The quiet click and the typing play as clips, split where the
       // camera zooms in on the typing and back out (wide, zoomed, wide); the wait is cut.
@@ -319,6 +330,77 @@ describe("direction", () => {
     } finally {
       await close();
     }
+  });
+
+  /** The bundle's files, in order: it's stored uncompressed, steps.json first. */
+  function readBundle(path: string) {
+    const bytes = readFileSync(path);
+    const entries: { name: string; data: Buffer }[] = [];
+    let at = 0;
+    while (bytes.readUInt32LE(at) === 0x04034b50) {
+      const size = bytes.readUInt32LE(at + 18);
+      const nameLength = bytes.readUInt16LE(at + 26);
+      const start = at + 30 + nameLength + bytes.readUInt16LE(at + 28);
+      entries.push({
+        name: bytes.subarray(at + 30, at + 30 + nameLength).toString(),
+        data: bytes.subarray(start, start + size),
+      });
+      at = start + size;
+    }
+    return entries;
+  }
+
+  it("exports the recording to any path, with every step, ready for the player", async () => {
+    const exported = join(work, "a", "new", "folder", "directed.openshowcase");
+    const lines: string[] = [];
+    const result = await exportDemo(out, {
+      extensionDir,
+      headed: false,
+      out: exported,
+      log: (line) => lines.push(line),
+    });
+    expect(result.out).toBe(exported);
+    expect(result.bytes).toBeGreaterThan(1_000);
+    expect(lines).toEqual([]); // no fallback: it re-encoded the played ranges
+
+    const [manifest, ...assets] = readBundle(exported);
+    expect(manifest?.name).toBe("steps.json");
+    const demo = JSON.parse(manifest?.data.toString() ?? "") as {
+      steps: {
+        type: string;
+        hotspot?: { label?: string };
+        image?: { src: string };
+      }[];
+    };
+    expect(demo.steps.map((s) => s.type)).toEqual([
+      "video",
+      "video",
+      "video",
+      "photo",
+      "video",
+    ]);
+    const photo = demo.steps[3];
+    expect(photo?.hotspot?.label).toBe("Save it");
+    expect(assets.map((a) => a.name)).toEqual(
+      expect.arrayContaining([photo?.image?.src, "assets/recording.mp4"]),
+    );
+    expect(assets.every((a) => a.data.length > 0)).toBe(true);
+  });
+
+  it("exports a .zip when asked, the same bytes under another name", async () => {
+    const zip = join(work, "directed.zip");
+    await exportDemo(out, { extensionDir, headed: false, out: zip });
+    expect(readBundle(zip)[0]?.name).toBe("steps.json");
+  });
+
+  it("explains a recording that isn't there", async () => {
+    await expect(
+      exportDemo(join(work, "nope.osrec"), {
+        extensionDir,
+        headed: false,
+        out: join(work, "nope.openshowcase"),
+      }),
+    ).rejects.toThrow(/no recording/);
   });
 });
 
