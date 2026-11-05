@@ -1,5 +1,13 @@
 # @rustrak/openshowcase-player-core
 
+## 0.6.2
+
+### Patch Changes
+
+- [`848a515`](https://github.com/rustrak/openshowcase/commit/848a51552344c4ec6224c4faf5e32380a7096bfb) Thanks [@AbianS](https://github.com/AbianS)! - Stop the player's Tailwind utilities and theme variables from overriding the host page's. They now carry an `osp` prefix, so classes like `.relative` and `.hidden` no longer leak out of the player.
+- Updated dependencies []:
+  - @rustrak/openshowcase-schema@0.6.2
+
 ## 0.6.1
 
 ### Patch Changes
