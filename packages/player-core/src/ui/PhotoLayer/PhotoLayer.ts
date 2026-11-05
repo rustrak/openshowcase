@@ -86,7 +86,7 @@ export function PhotoLayer(
   const img = h("img", {
     class: () =>
       cx(
-        "media absolute inset-0 h-full w-full object-contain",
+        "media osp:absolute osp:inset-0 osp:h-full osp:w-full osp:object-contain",
         entering() && "media--entering",
         previous() !== null && "media--fading",
       ),
@@ -268,7 +268,8 @@ export function PhotoLayer(
       () => previous(),
       () =>
         h("img", {
-          class: "media absolute inset-0 h-full w-full object-contain",
+          class:
+            "media osp:absolute osp:inset-0 osp:h-full osp:w-full osp:object-contain",
           style: () => `transform: ${lastPrevious().transform};`,
           src: () => lastPrevious().src,
           alt: "",
@@ -283,7 +284,7 @@ export function PhotoLayer(
         h("div", {
           class: () =>
             cx(
-              "spotlight pointer-events-none absolute inset-0 z-1",
+              "spotlight osp:pointer-events-none osp:absolute osp:inset-0 osp:z-1",
               light().leaving && "spotlight--leaving",
             ),
           style: () =>

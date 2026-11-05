@@ -3,9 +3,11 @@
    global element reset (`*, h1, img, button…`) would restyle the whole host page. The few
    resets the player needs are scoped under `.openshowcase-player` below. Visual pieces that must
    survive hostile host CSS (hotspot, tooltip, navbar) are styled in their components'
-   scoped, unlayered `<style>` blocks rather than with layered utilities. */
+   scoped, unlayered `<style>` blocks rather than with layered utilities.
+   The `osp` prefix keeps utilities and theme variables from colliding with the host's: both
+   share layer names with a host using Tailwind, where the sheet loaded last would win. */
 @layer theme, base, components, utilities;
-@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/theme.css" layer(theme) prefix(osp);
 @import "tailwindcss/utilities.css" layer(utilities);
 
 /* The player's dark/light appearance is an explicit theme choice (`Demo.theme.appearance`),

@@ -24,6 +24,7 @@ Framework-agnostic playback engine used by both adapters and by the extension's 
 ## Styling: the player lives in other people's pages
 
 - `app.css` imports only Tailwind's theme + utilities, **never full `tailwindcss`** (its preflight resets the host page). Required resets are scoped under `.openshowcase-player`.
+- Tailwind classes carry the `osp:` prefix (`osp:relative`, `osp:dark:bg-[#18181b]`), which also renames theme variables to `--osp-*`. Without it, `.relative` or `--ease-out` would override the host's own, since they share layer names and the last sheet wins. `app-css.test.ts` guards this.
 - Host CSS is unlayered and beats Tailwind's layered utilities, so visuals that must survive any site (hotspot, tooltip, navbar, spotlight) are styled in each component's `*.styles.ts`, unlayered.
 - Every selector in a `*.styles.ts` starts with `.openshowcase-player` (so it never leaks onto the host page) and every `@keyframes` name with `openshowcase-`. Class names are global inside the player: don't reuse one across components (`video.media`/`img.media` are told apart by tag).
 - Overlay sizes use `--wd-u` (the root is an inline-size container), so they scale with the embed. Every animation has a `prefers-reduced-motion` branch.

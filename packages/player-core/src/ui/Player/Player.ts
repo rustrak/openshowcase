@@ -562,7 +562,7 @@ export function createPlayerView({
     "div",
     {
       class:
-        "stage relative flex-none overflow-hidden bg-[#fafafa] dark:bg-[#0f0f10]",
+        "stage osp:relative osp:flex-none osp:overflow-hidden osp:bg-[#fafafa] osp:dark:bg-[#0f0f10]",
       style: `aspect-ratio: ${naturalWidth} / ${naturalHeight};`,
       onclick: (event: MouseEvent) => {
         if (event.target === stage) handleAdvanceGesture();
@@ -615,7 +615,7 @@ export function createPlayerView({
         class: () => {
           const value = currentWrapper();
           return cx(
-            "frame relative w-full",
+            "frame osp:relative osp:w-full",
             value !== "none" && `frame--${value}`,
           );
         },
@@ -624,7 +624,7 @@ export function createPlayerView({
         "div",
         {
           class:
-            "frame-window flex w-full flex-col overflow-hidden bg-white dark:bg-[#18181b]",
+            "frame-window osp:flex osp:w-full osp:flex-col osp:overflow-hidden osp:bg-white osp:dark:bg-[#18181b]",
         },
         show(
           () => currentWrapper() !== "none",
@@ -658,7 +658,7 @@ export function createPlayerView({
     {
       class: () =>
         cx(
-          "openshowcase-player relative block leading-[1.45] select-none",
+          "openshowcase-player osp:relative osp:block osp:leading-[1.45] osp:select-none",
           isDark() && "openshowcase-player--dark",
         ),
       role: "application",

@@ -22,7 +22,8 @@ export function VideoLayer(
 ): HTMLVideoElement {
   injectStyles(document, "video-layer", css);
   const video = h("video", {
-    class: "media absolute inset-0 h-full w-full object-contain",
+    class:
+      "media osp:absolute osp:inset-0 osp:h-full osp:w-full osp:object-contain",
     style: () => {
       const transition = props.transformInstant?.()
         ? "none"
