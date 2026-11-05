@@ -66,6 +66,7 @@ describe("startVideoStep", () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    vi.restoreAllMocks();
   });
 
   it("seeks to startTime and plays when not contiguous", () => {
@@ -78,6 +79,32 @@ describe("startVideoStep", () => {
 
     expect(video.currentTime).toBe(baseStep.startTime);
     expect(video.play).toHaveBeenCalledTimes(1);
+  });
+
+  it("holds a clip that starts on the video's last frame instead of restarting the video", () => {
+    // a browser reports such a video as ended, and play() on an ended video jumps to 0
+    let now = 1000;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const video = { ...createVideo({ currentTime: 9 }), ended: true };
+    const step = { ...baseStep, startTime: 9, endTime: 10, playbackRate: 2 };
+    const callbacks = {
+      onProgress: vi.fn(),
+      onZoomOut: vi.fn(),
+      onEnded: vi.fn(),
+    };
+
+    startVideoStep(video as never, step, true, callbacks);
+    expect(video.play).not.toHaveBeenCalled();
+
+    now += 250; // a quarter of a second at 2x: half the clip
+    raf.tick(now);
+    expect(callbacks.onProgress).toHaveBeenLastCalledWith(0.5);
+    expect(callbacks.onEnded).not.toHaveBeenCalled();
+
+    now += 250;
+    raf.tick(now);
+    expect(callbacks.onEnded).toHaveBeenCalledTimes(1);
+    expect(video.currentTime).toBe(9);
   });
 
   it("doesn't leak an unhandled rejection when a pause() interrupts play()", async () => {

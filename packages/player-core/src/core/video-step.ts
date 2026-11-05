@@ -6,6 +6,7 @@ import {
 import { playVideo } from "./play-video";
 import {
   type VideoClipWatcherHandle,
+  type VideoLike,
   watchVideoClip,
 } from "./video-clip-watcher";
 
@@ -58,6 +59,21 @@ export function handsZoomTo(next: Step | undefined): boolean {
   return next?.panZoom != null;
 }
 
+/** A frame on hold, as the clip watcher sees it: its time runs on the clock, not the video. */
+function heldFrame(startTime: number, playbackRate: number): VideoLike {
+  const startedAt = performance.now();
+  return {
+    get currentTime() {
+      return (
+        startTime + ((performance.now() - startedAt) / 1000) * playbackRate
+      );
+    },
+    paused: false,
+    playbackRate,
+    pause() {},
+  };
+}
+
 /** Seeks (unless contiguous), starts playback, and wires up the clip watcher for a video step. */
 export function startVideoStep(
   video: HTMLVideoElement,
@@ -68,7 +84,10 @@ export function startVideoStep(
 ): VideoClipWatcherHandle {
   video.playbackRate = step.playbackRate ?? 1;
   if (!wasContiguous) video.currentTime = step.startTime;
-  void playVideo(video);
+  // Positioned on its last frame, a video already reports `ended` however long that frame
+  // lasts (export holds a still ending on one frame), and play() would restart it from 0.
+  const onLastFrame = video.ended;
+  if (!onLastFrame) void playVideo(video);
 
   const zoomOutLeadSec =
     step.panZoom && !handsZoomTo(next)
@@ -77,7 +96,7 @@ export function startVideoStep(
       : undefined;
 
   return watchVideoClip(
-    video,
+    onLastFrame ? heldFrame(step.startTime, video.playbackRate) : video,
     {
       startTime: step.startTime,
       endTime: step.endTime,
