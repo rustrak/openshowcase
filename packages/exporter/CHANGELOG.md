@@ -1,5 +1,12 @@
 # @rustrak/openshowcase-exporter
 
+## 0.6.0
+
+### Patch Changes
+
+- Updated dependencies [[`8391f15`](https://github.com/rustrak/openshowcase/commit/8391f150c16a7160cee5bc9ed265f3a387714237)]:
+  - @rustrak/openshowcase-schema@0.6.0
+
 ## 0.5.0
 
 ### Patch Changes
