@@ -457,7 +457,6 @@ export function createPlayerView({
           batch(() => playPhotoStep(step, wasHidden, isZoomingOut));
       });
     });
-    preSeekNextVideoStep();
   }
 
   /** A shown photo's motion: its zoom, then its hotspot and tooltip once the zoom settles. */
@@ -506,15 +505,6 @@ export function createPlayerView({
       if (currentStepRef !== step) return;
       overlay.reveal(step.hotspot, anchor, () => currentStepRef === step);
     }, revealDelayMs);
-  }
-
-  function preSeekNextVideoStep(): void {
-    const nextStep = demo.steps[index + 1];
-    if (!nextStep || !isVideoStep(nextStep)) return;
-    videoReady.then(() => {
-      if (demo.steps[index + 1] !== nextStep) return;
-      videoEl.currentTime = nextStep.startTime;
-    });
   }
 
   function computeAnchor(

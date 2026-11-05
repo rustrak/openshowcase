@@ -629,6 +629,54 @@ describe("Player (mount.ts) integration", () => {
     await vi.waitFor(() => expect(hotspot()).not.toBeNull());
   });
 
+  it("seeks to the next clip only on leaving the photo before it", async () => {
+    // A seek during the photo reaches the compositor before the swap off the video layer
+    // has, flashing the next clip's first frame just ahead of the hotspot.
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const seek = vi.spyOn(HTMLMediaElement.prototype, "currentTime", "set");
+    const onStepChange = vi.fn();
+    player = new Player({
+      container,
+      onStepChange,
+      demo: {
+        id: "demo-seek",
+        title: "Clip, photo, clip",
+        theme: { wrapper: "none", autoplay: false, appearance: "light" },
+        video: {
+          src: "data:video/webm;base64,",
+          width: 800,
+          height: 600,
+          durationSec: 3,
+        },
+        steps: [
+          { id: "first", type: "video", startTime: 0, endTime: 1 },
+          {
+            id: "photo",
+            type: "photo",
+            image: { src: TINY_PNG, width: 800, height: 600 },
+            hotspot: { x: 0.5, y: 0.5, label: "Click here" },
+          },
+          { id: "second", type: "video", startTime: 1.5, endTime: 2.5 },
+        ],
+      },
+    });
+    player.mount();
+    await vi.waitFor(() => expect(onStepChange).toHaveBeenCalled());
+
+    player.next();
+    await vi.waitFor(() =>
+      expect(container.querySelector('[aria-label="Hotspot"]')).not.toBeNull(),
+    );
+    expect(seek).not.toHaveBeenCalledWith(1.5);
+
+    player.next();
+    await vi.waitFor(() => expect(seek).toHaveBeenCalledWith(1.5));
+    // this empty clip never reports `seeked`: wait out the swap, so play() is still stubbed
+    await vi.waitFor(() =>
+      expect(container.querySelector("video")?.style.display).toBe("block"),
+    );
+  });
+
   it("carries a zoomed photo's framing straight into the zoomed video step after it", async () => {
     // no real clip to decode here: play() is stubbed and the video step never ends
     vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
