@@ -1,5 +1,13 @@
 # @rustrak/openshowcase-player-core
 
+## 0.6.1
+
+### Patch Changes
+
+- [`18b7add`](https://github.com/rustrak/openshowcase/commit/18b7add7c506305226b3a85de5a2ea0b7d8d8c51) Thanks [@AbianS](https://github.com/AbianS)! - Fix a frame of the next clip flashing just before a hotspot appears, when a video step leads to a photo followed by another video step.
+- Updated dependencies []:
+  - @rustrak/openshowcase-schema@0.6.1
+
 ## 0.6.0
 
 ### Minor Changes
