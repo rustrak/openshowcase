@@ -37,14 +37,64 @@ describe("Navbar", () => {
     expect(buttons[0]!.classList.contains("segment--active")).toBe(false);
   });
 
-  it("joins many segments into one dense scrubber", async () => {
-    const few = await render({ segments: segments() });
-    expect(few.container.querySelector(".segments--dense")).toBeNull();
+  it("paints the current step with the accent color, and the passed ones white", async () => {
+    const screen = await render({ segments: segments(), accent: "#ff0000" });
+    const fills = screen.container.querySelectorAll(".segment-fill");
 
-    const many = await render({
-      segments: Array.from({ length: 12 }, () => segments()[2]!),
+    expect(getComputedStyle(fills[1] as Element).backgroundColor).toBe(
+      "rgb(255, 0, 0)",
+    );
+    expect(getComputedStyle(fills[0] as Element).backgroundColor).toBe(
+      "rgba(255, 255, 255, 0.9)",
+    );
+  });
+
+  it("shows play/pause and the time only for a clip", async () => {
+    const screen = await render({ segments: segments() });
+    expect(screen.container.querySelector(".clip-toggle")).toBeNull();
+    expect(screen.container.querySelector(".clip-time")).toBeNull();
+
+    await screen.rerender({
+      segments: segments(),
+      clip: { elapsed: 1.2, total: 2.3 },
     });
-    expect(many.container.querySelector(".segments--dense")).not.toBeNull();
+    expect(screen.container.querySelector(".clip-time")?.textContent).toBe(
+      "1.2 / 2.3s",
+    );
+    await expect
+      .element(screen.getByRole("button", { name: "Pause" }))
+      .toBeInTheDocument();
+
+    await screen.rerender({
+      segments: segments(),
+      clip: { elapsed: 1.2, total: 2.3 },
+      paused: true,
+    });
+    await expect
+      .element(screen.getByRole("button", { name: "Play" }))
+      .toBeInTheDocument();
+  });
+
+  it("calls onTogglePlay from its button", async () => {
+    const onTogglePlay = vi.fn();
+    const screen = await render({
+      segments: segments(),
+      clip: { elapsed: 0, total: 2 },
+      visible: true,
+      onTogglePlay,
+    });
+
+    await screen.getByRole("button", { name: "Pause" }).click();
+
+    expect(onTogglePlay).toHaveBeenCalledTimes(1);
+  });
+
+  it("has no previous/next buttons", async () => {
+    const screen = await render({ segments: segments() });
+    expect(screen.container.querySelector('[title="Next step"]')).toBeNull();
+    expect(
+      screen.container.querySelector('[title="Previous step"]'),
+    ).toBeNull();
   });
 
   it("calls onSeek with the clicked segment index", async () => {
@@ -58,23 +108,6 @@ describe("Navbar", () => {
     await screen.getByRole("button", { name: "Go to step 3" }).click();
 
     expect(onSeek).toHaveBeenCalledWith(2);
-  });
-
-  it("calls onPrev and onNext from the nav buttons", async () => {
-    const onPrev = vi.fn();
-    const onNext = vi.fn();
-    const screen = await render({
-      segments: segments(),
-      visible: true,
-      onPrev,
-      onNext,
-    });
-
-    await screen.getByTitle("Previous step").click();
-    await screen.getByTitle("Next step").click();
-
-    expect(onPrev).toHaveBeenCalledTimes(1);
-    expect(onNext).toHaveBeenCalledTimes(1);
   });
 
   it("doesn't take pointer events while hidden, so hotspots underneath stay clickable", async () => {

@@ -1,12 +1,13 @@
-import { cx, each, h, svg, type ViewProps } from "../../dom/h";
-import { computed } from "../../dom/signals";
+import { formatClipTime } from "../../core/clip-time";
+import { cx, each, h, show, svg, type ViewProps } from "../../dom/h";
+import { computed, effect } from "../../dom/signals";
 import { injectStyles } from "../../dom/styles";
 import { css } from "./Navbar.styles";
 
 export interface NavbarSegment {
   /** Fill progress within the segment, 0-1. */
   progress: number;
-  /** The currently playing/paused step — rendered wider than the rest. */
+  /** The currently playing/paused step — rendered wider than the rest, in the accent color. */
   active: boolean;
   /** A step already passed — fill goes fully white instead of the accent color. */
   done: boolean;
@@ -14,24 +15,21 @@ export interface NavbarSegment {
 
 export interface NavbarProps {
   segments: NavbarSegment[];
-  /** Shown while the viewer is interacting (pointer moving over the player, keyboard focus
-   * inside it). Hidden, it doesn't take pointer events — hotspots underneath stay clickable. */
+  /** The current step's color. Defaults to white. */
+  accent?: string;
+  /** The clip playing, in seconds of playback. A photo step has none, so no play/pause or time. */
+  clip?: { elapsed: number; total: number } | undefined;
+  paused?: boolean;
+  /** Hidden, it doesn't take pointer events — hotspots underneath stay clickable. */
   visible?: boolean;
-  onPrev?: () => void;
-  onNext?: () => void;
+  onTogglePlay?: () => void;
   onSeek?: (index: number) => void;
 }
 
-/** From this many steps the segments join into one scrubber (see `.segments--dense`). */
-const DENSE_AT = 12;
-
-function icon(d: string): SVGSVGElement {
-  return svg(
-    "svg",
-    { viewBox: "0 0 16 16", "aria-hidden": "true" },
-    svg("path", { d }),
-  );
-}
+const PLAY =
+  "M5 3.2c0-.8.9-1.3 1.6-.9l6.3 4c.7.4.7 1.4 0 1.8l-6.3 4c-.7.4-1.6-.1-1.6-.9z";
+const PAUSE =
+  "M3.5 3.6c0-.6.5-1.1 1.1-1.1h1c.6 0 1.1.5 1.1 1.1v8.8c0 .6-.5 1.1-1.1 1.1h-1c-.6 0-1.1-.5-1.1-1.1zm5.8 0c0-.6.5-1.1 1.1-1.1h1c.6 0 1.1.5 1.1 1.1v8.8c0 .6-.5 1.1-1.1 1.1h-1c-.6 0-1.1-.5-1.1-1.1z";
 
 export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
   injectStyles(document, "navbar", css);
@@ -39,32 +37,42 @@ export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
     props.segments().findIndex((segment) => segment.active),
   );
 
-  return h(
+  const element = h(
     "div",
     { class: () => cx("navbar", props.visible?.() && "navbar--visible") },
-    h(
-      "button",
-      {
-        type: "button",
-        title: "Previous step",
-        "aria-label": "Previous step",
-        class: "nav-btn",
-        onclick: (event: MouseEvent) => {
-          event.stopPropagation();
-          props.onPrev?.();
-        },
-      },
-      icon("M10 3.5 5.5 8l4.5 4.5"),
+    show(
+      () => props.clip?.() != null,
+      () =>
+        h(
+          "div",
+          { class: "clip" },
+          h(
+            "button",
+            {
+              type: "button",
+              class: "clip-toggle",
+              title: () => (props.paused?.() ? "Play" : "Pause"),
+              "aria-label": () => (props.paused?.() ? "Play" : "Pause"),
+              onclick: (event: MouseEvent) => {
+                event.stopPropagation();
+                props.onTogglePlay?.();
+              },
+            },
+            svg(
+              "svg",
+              { viewBox: "0 0 16 16", "aria-hidden": "true" },
+              svg("path", { d: () => (props.paused?.() ? PLAY : PAUSE) }),
+            ),
+          ),
+          h("span", { class: "clip-time" }, () => {
+            const clip = props.clip?.();
+            return clip ? formatClipTime(clip.elapsed, clip.total) : "";
+          }),
+        ),
     ),
     h(
       "div",
-      {
-        class: () =>
-          cx(
-            "segments",
-            props.segments().length >= DENSE_AT && "segments--dense",
-          ),
-      },
+      { class: "segments" },
       each(
         () => props.segments(),
         (_, index) => index,
@@ -114,19 +122,12 @@ export function Navbar(props: ViewProps<NavbarProps>): HTMLDivElement {
         () => `/${props.segments().length}`,
       ),
     ),
-    h(
-      "button",
-      {
-        type: "button",
-        title: "Next step",
-        "aria-label": "Next step",
-        class: "nav-btn",
-        onclick: (event: MouseEvent) => {
-          event.stopPropagation();
-          props.onNext?.();
-        },
-      },
-      icon("M6 3.5 10.5 8 6 12.5"),
-    ),
   );
+  // A custom property, not a style attribute: a demo's color can't add declarations
+  effect(() => {
+    const accent = props.accent?.();
+    if (accent) element.style.setProperty("--wd-accent", accent);
+    else element.style.removeProperty("--wd-accent");
+  });
+  return element;
 }

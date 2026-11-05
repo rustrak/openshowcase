@@ -1,6 +1,7 @@
 import type {
   Hotspot as HotspotData,
   HotspotPosition,
+  Step,
 } from "@rustrak/openshowcase-schema";
 import { defaultHotspotStyle } from "@rustrak/openshowcase-schema";
 
@@ -33,6 +34,21 @@ export interface PhotoOverlayCallbacks {
   hideTooltip: () => void;
 }
 
+/**
+ * The hotspot whose color the controls take at a step: its own, or in a clip the one it's
+ * leading to, so the color doesn't change right before that hotspot shows up. Past the last
+ * hotspot, the closest one before.
+ */
+export function upcomingHotspot(
+  steps: readonly Step[],
+  index: number,
+): HotspotData | undefined {
+  const closest = [...steps.slice(index), ...steps.slice(0, index).reverse()];
+  for (const step of closest)
+    if (step.type === "photo" && step.hotspot) return step.hotspot;
+  return undefined;
+}
+
 const TRAVEL_THRESHOLD_PX = 2;
 const APPEAR_TOOLTIP_DELAY_MS = 220;
 const TRAVEL_TOOLTIP_DELAY_MS = 660;
@@ -58,13 +74,13 @@ export class PhotoOverlayController {
   }
 
   /** The colors a hotspot is drawn with: the override, else its own, else the defaults. */
-  colors(hotspot: HotspotData): Required<HotspotStyle> {
+  colors(hotspot?: HotspotData): Required<HotspotStyle> {
     return {
       bgColor:
-        this.style.bgColor ?? hotspot.bgColor ?? defaultHotspotStyle.bgColor,
+        this.style.bgColor ?? hotspot?.bgColor ?? defaultHotspotStyle.bgColor,
       textColor:
         this.style.textColor ??
-        hotspot.textColor ??
+        hotspot?.textColor ??
         defaultHotspotStyle.textColor,
     };
   }

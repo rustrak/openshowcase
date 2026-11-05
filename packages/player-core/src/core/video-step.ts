@@ -60,18 +60,36 @@ export function handsZoomTo(next: Step | undefined): boolean {
 }
 
 /** A frame on hold, as the clip watcher sees it: its time runs on the clock, not the video. */
-function heldFrame(startTime: number, playbackRate: number): VideoLike {
-  const startedAt = performance.now();
+function heldFrame(
+  startTime: number,
+  playbackRate: number,
+): VideoLike & { resume(): void } {
+  let heldSec = 0;
+  let resumedAt: number | undefined = performance.now();
+  const held = () =>
+    heldSec +
+    (resumedAt === undefined ? 0 : (performance.now() - resumedAt) / 1000);
   return {
     get currentTime() {
-      return (
-        startTime + ((performance.now() - startedAt) / 1000) * playbackRate
-      );
+      return startTime + held() * playbackRate;
     },
-    paused: false,
+    get paused() {
+      return resumedAt === undefined;
+    },
     playbackRate,
-    pause() {},
+    pause() {
+      heldSec = held();
+      resumedAt = undefined;
+    },
+    resume() {
+      resumedAt ??= performance.now();
+    },
   };
+}
+
+export interface VideoStepHandle extends VideoClipWatcherHandle {
+  pause(): void;
+  resume(): void;
 }
 
 /** Seeks (unless contiguous), starts playback, and wires up the clip watcher for a video step. */
@@ -81,7 +99,7 @@ export function startVideoStep(
   wasContiguous: boolean,
   callbacks: VideoStepCallbacks,
   next?: Step,
-): VideoClipWatcherHandle {
+): VideoStepHandle {
   video.playbackRate = step.playbackRate ?? 1;
   if (!wasContiguous) video.currentTime = step.startTime;
   // Positioned on its last frame, a video already reports `ended` however long that frame
@@ -95,8 +113,12 @@ export function startVideoStep(
         ZOOM_OUT_SAFETY_MARGIN_SEC
       : undefined;
 
-  return watchVideoClip(
-    onLastFrame ? heldFrame(step.startTime, video.playbackRate) : video,
+  const held = onLastFrame
+    ? heldFrame(step.startTime, video.playbackRate)
+    : undefined;
+
+  const watcher = watchVideoClip(
+    held ?? video,
     {
       startTime: step.startTime,
       endTime: step.endTime,
@@ -109,6 +131,17 @@ export function startVideoStep(
       onClipEnd: callbacks.onEnded,
     },
   );
+
+  return {
+    cancel: watcher.cancel,
+    pause: () => (held ?? video).pause(),
+    resume() {
+      if (held) held.resume();
+      // Paused on its last frame: play() would restart the video, and there's nothing left
+      else if (video.ended) callbacks.onEnded();
+      else void playVideo(video);
+    },
+  };
 }
 
 /** Longest the player waits for a seek before showing the video anyway. */

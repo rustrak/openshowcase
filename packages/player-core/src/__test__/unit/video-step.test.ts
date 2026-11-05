@@ -107,6 +107,68 @@ describe("startVideoStep", () => {
     expect(video.currentTime).toBe(9);
   });
 
+  it("stops a held frame's clock while paused", () => {
+    let now = 1000;
+    vi.spyOn(performance, "now").mockImplementation(() => now);
+    const video = { ...createVideo({ currentTime: 9 }), ended: true };
+    const callbacks = {
+      onProgress: vi.fn(),
+      onZoomOut: vi.fn(),
+      onEnded: vi.fn(),
+    };
+    const handle = startVideoStep(
+      video as never,
+      { ...baseStep, startTime: 9, endTime: 10 },
+      true,
+      callbacks,
+    );
+
+    now += 250;
+    handle.pause();
+    now += 5000; // far past the clip's end, but paused
+    raf.tick(now);
+    expect(callbacks.onProgress).toHaveBeenLastCalledWith(0.25);
+    expect(callbacks.onEnded).not.toHaveBeenCalled();
+
+    handle.resume();
+    now += 750;
+    raf.tick(now);
+    expect(callbacks.onEnded).toHaveBeenCalledTimes(1);
+    expect(video.play).not.toHaveBeenCalled();
+  });
+
+  it("pauses and resumes the video", () => {
+    const video = createVideo();
+    const handle = startVideoStep(video as never, baseStep, true, {
+      onProgress: vi.fn(),
+      onZoomOut: vi.fn(),
+      onEnded: vi.fn(),
+    });
+    expect(video.play).toHaveBeenCalledTimes(1);
+
+    handle.pause();
+    expect(video.pause).toHaveBeenCalledTimes(1);
+    handle.resume();
+    expect(video.play).toHaveBeenCalledTimes(2);
+  });
+
+  it("ends the clip instead of restarting a video paused on its last frame", () => {
+    const video = { ...createVideo(), ended: false };
+    const onEnded = vi.fn();
+    const handle = startVideoStep(video as never, baseStep, true, {
+      onProgress: vi.fn(),
+      onZoomOut: vi.fn(),
+      onEnded,
+    });
+
+    handle.pause();
+    video.ended = true;
+    handle.resume();
+
+    expect(onEnded).toHaveBeenCalledTimes(1);
+    expect(video.play).toHaveBeenCalledTimes(1);
+  });
+
   it("doesn't leak an unhandled rejection when a pause() interrupts play()", async () => {
     const onUnhandled = vi.fn();
     process.on("unhandledRejection", onUnhandled);

@@ -97,6 +97,156 @@ describe("Player (mount.ts) integration", () => {
     expect(hotspot()).toBe(shownHotspot);
   });
 
+  describe("controls", () => {
+    const clipThenPhoto = (): Demo => ({
+      id: "demo-controls",
+      title: "Clip then photo",
+      theme: { wrapper: "none", autoplay: false, appearance: "light" },
+      video: {
+        src: "data:video/webm;base64,",
+        width: 800,
+        height: 600,
+        durationSec: 4,
+      },
+      steps: [
+        {
+          id: "clip",
+          type: "video",
+          startTime: 0,
+          endTime: 3,
+          playbackRate: 2,
+        },
+        {
+          id: "photo",
+          type: "photo",
+          image: { src: TINY_PNG, width: 800, height: 600 },
+          hotspot: { x: 0.5, y: 0.2, bgColor: "#ff0000" },
+        },
+      ],
+    });
+    const part = (selector: string) =>
+      container.querySelector<HTMLElement>(selector);
+    const navVisible = () => part(".navbar--visible") !== null;
+    const moveTo = (fraction: number, pointerType = "mouse") => {
+      const { top, height } = (
+        part(".stage") as HTMLElement
+      ).getBoundingClientRect();
+      (part(".openshowcase-player") as HTMLElement).dispatchEvent(
+        new PointerEvent("pointermove", {
+          bubbles: true,
+          clientY: top + height * fraction,
+          pointerType,
+        }),
+      );
+    };
+
+    beforeEach(() => {
+      container.style.width = "800px";
+      vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    });
+
+    it("shows the bar only with the pointer over the bottom 20% of the stage", () => {
+      player = new Player({ container, demo: createDemo() });
+      player.mount();
+
+      moveTo(0.5);
+      expect(navVisible()).toBe(false);
+      moveTo(0.1);
+      expect(navVisible()).toBe(false);
+      moveTo(0.85);
+      expect(navVisible()).toBe(true);
+      moveTo(0.5);
+      expect(navVisible()).toBe(false);
+
+      moveTo(0.85);
+      part(".openshowcase-player")?.dispatchEvent(
+        new PointerEvent("pointerleave"),
+      );
+      expect(navVisible()).toBe(false);
+    });
+
+    it("shows the bar for a moment on a tap anywhere", () => {
+      player = new Player({ container, demo: createDemo() });
+      player.mount();
+
+      moveTo(0.5, "touch");
+      expect(navVisible()).toBe(false);
+      part(".stage")?.dispatchEvent(
+        new PointerEvent("pointerdown", {
+          bubbles: true,
+          pointerType: "touch",
+        }),
+      );
+      expect(navVisible()).toBe(true);
+    });
+
+    it("has play/pause and the clip's playback time in a clip, and neither on a photo", async () => {
+      const onStepChange = vi.fn();
+      player = new Player({ container, demo: clipThenPhoto(), onStepChange });
+      player.mount();
+
+      // 3s of video at 2x
+      expect(part(".clip-time")?.textContent).toBe("0.0 / 1.5s");
+      expect(part(".clip-toggle")).not.toBeNull();
+
+      await vi.waitFor(() => expect(onStepChange).toHaveBeenCalled());
+      player.next();
+      expect(part(".clip-time")).toBeNull();
+      expect(part(".clip-toggle")).toBeNull();
+    });
+
+    it("pauses and resumes the clip, and keeps the bar up while paused", async () => {
+      const pause = vi.spyOn(HTMLMediaElement.prototype, "pause");
+      const play = vi.mocked(HTMLMediaElement.prototype.play);
+      player = new Player({ container, demo: clipThenPhoto() });
+      player.mount();
+      await vi.waitFor(() => expect(play).toHaveBeenCalled());
+      const plays = play.mock.calls.length;
+      moveTo(0.9);
+      await vi.waitFor(() =>
+        expect(
+          getComputedStyle(part(".navbar") as HTMLElement).pointerEvents,
+        ).toBe("auto"),
+      );
+
+      part(".clip-toggle")?.click();
+      expect(pause).toHaveBeenCalled();
+      expect(part(".clip-toggle")?.getAttribute("aria-label")).toBe("Play");
+      moveTo(0.3);
+      expect(navVisible()).toBe(true);
+
+      part(".clip-toggle")?.click();
+      expect(play.mock.calls.length).toBe(plays + 1);
+      expect(part(".clip-toggle")?.getAttribute("aria-label")).toBe("Pause");
+      expect(navVisible()).toBe(false);
+    });
+
+    it("plays again after moving on from a paused clip", async () => {
+      const play = vi.mocked(HTMLMediaElement.prototype.play);
+      const onStepChange = vi.fn();
+      player = new Player({ container, demo: clipThenPhoto(), onStepChange });
+      player.mount();
+      await vi.waitFor(() => expect(play).toHaveBeenCalled());
+
+      part(".clip-toggle")?.click();
+      player.next();
+      expect(navVisible()).toBe(false);
+      player.goTo(0);
+      expect(part(".clip-toggle")?.getAttribute("aria-label")).toBe("Pause");
+    });
+
+    it("takes the upcoming hotspot's color, or the override", () => {
+      player = new Player({ container, demo: clipThenPhoto() });
+      player.mount();
+      const accent = () =>
+        part(".navbar")?.style.getPropertyValue("--wd-accent");
+
+      expect(accent()).toBe("#ff0000");
+      player.setHotspotStyle({ bgColor: "#00ff00" });
+      expect(accent()).toBe("#00ff00");
+    });
+  });
+
   describe("frame", () => {
     const part = (selector: string) =>
       container.querySelector<HTMLElement>(selector);

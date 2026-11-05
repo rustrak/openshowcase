@@ -27,12 +27,13 @@ import {
   type PhotoHotspotVisual,
   PhotoOverlayController,
   type PhotoTooltipVisual,
+  upcomingHotspot,
 } from "../../core/photo-overlay";
 import { StepMachine } from "../../core/step-machine";
-import type { VideoClipWatcherHandle } from "../../core/video-clip-watcher";
 import {
   isContiguousPlayback,
   startVideoStep,
+  type VideoStepHandle,
   whenAtTime,
 } from "../../core/video-step";
 import { batch, cx, h, show } from "../../dom/h";
@@ -190,7 +191,12 @@ export function createPlayerView({
   );
 
   let videoObjectUrl: string | undefined;
-  let videoWatchHandle: VideoClipWatcherHandle | undefined;
+  let videoWatchHandle: VideoStepHandle | undefined;
+  const clip = signal<{ elapsed: number; total: number } | undefined>(
+    undefined,
+  );
+  const paused = signal(false);
+  const accent = signal<string | undefined>(undefined);
   let currentStepRef: Step | undefined;
   let previousStepRef: Step | undefined;
 
@@ -242,10 +248,23 @@ export function createPlayerView({
   function finish(): void {
     batch(() => {
       overlay.reset();
+      clip(undefined);
+      paused(false);
       segments(
         segments().map(() => ({ active: false, done: true, progress: 1 })),
       );
     });
+  }
+
+  function togglePlay(): void {
+    if (!videoWatchHandle) return;
+    if (paused()) videoWatchHandle.resume();
+    else videoWatchHandle.pause();
+    paused(!paused());
+  }
+
+  function updateAccent(): void {
+    accent(overlay.colors(upcomingHotspot(demo.steps, index)).bgColor);
   }
 
   function handleAdvanceGesture(): void {
@@ -262,6 +281,16 @@ export function createPlayerView({
       currentStepRef = step;
       videoWatchHandle?.cancel();
       videoWatchHandle = undefined;
+      paused(false);
+      clip(
+        isVideoStep(step)
+          ? {
+              elapsed: 0,
+              total: (step.endTime - step.startTime) / (step.playbackRate ?? 1),
+            }
+          : undefined,
+      );
+      updateAccent();
 
       segments(
         segments().map((_, i) => ({
@@ -343,11 +372,16 @@ export function createPlayerView({
           true,
           {
             onProgress: (progress) => {
-              segments(
-                segments().map((segment, i) =>
-                  i === index ? { ...segment, progress } : segment,
-                ),
-              );
+              batch(() => {
+                segments(
+                  segments().map((segment, i) =>
+                    i === index ? { ...segment, progress } : segment,
+                  ),
+                );
+                const current = clip();
+                if (current)
+                  clip({ ...current, elapsed: progress * current.total });
+              });
             },
             onZoomOut: () => {
               video.transform(IDENTITY_ZOOM_TRANSFORM);
@@ -505,20 +539,27 @@ export function createPlayerView({
     overlay.reposition(hotspot, photo.tooltip(), anchor);
   }
 
-  // Navbar visibility: shown while the viewer is active over the player, hidden after a
-  // short idle — like a video player's controls. Hovering the bar itself keeps it up.
-  const NAV_IDLE_MS = 2200;
-  const navVisible = signal(false);
+  // Navbar visibility: up while the pointer is near the bottom of the stage, where it shows.
+  // Elsewhere it stays out of the demo's way, unless paused: the play button must stay findable.
+  // No hover on touch: a tap anywhere shows it for a moment.
+  const NAV_ZONE_RATIO = 0.2;
+  const NAV_TOUCH_MS = 2200;
+  const pointerNearNav = signal(false);
+  const touchedNav = signal(false);
   let navTimer: ReturnType<typeof setTimeout> | undefined;
-  function showNav(event?: Event): void {
-    navVisible(true);
-    clearTimeout(navTimer);
-    const overBar = (event?.target as Element | null)?.closest?.(".navbar");
-    if (!overBar) navTimer = setTimeout(() => navVisible(false), NAV_IDLE_MS);
+  function trackPointer(event: PointerEvent): void {
+    if (event.pointerType === "touch") return;
+    const { bottom, height } = stage.getBoundingClientRect();
+    pointerNearNav(event.clientY >= bottom - height * NAV_ZONE_RATIO);
   }
-  function hideNavSoon(): void {
+  function showNavOnTouch(event: PointerEvent): void {
+    if (event.pointerType !== "touch") {
+      trackPointer(event);
+      return;
+    }
+    touchedNav(true);
     clearTimeout(navTimer);
-    navTimer = setTimeout(() => navVisible(false), 400);
+    navTimer = setTimeout(() => touchedNav(false), NAV_TOUCH_MS);
   }
 
   const stage = h(
@@ -550,9 +591,11 @@ export function createPlayerView({
     }),
     Navbar({
       segments: () => segments(),
-      visible: () => navVisible(),
-      onPrev: prev,
-      onNext: next,
+      accent: () => accent(),
+      clip: () => clip(),
+      paused: () => paused(),
+      visible: () => pointerNearNav() || touchedNav() || paused(),
+      onTogglePlay: togglePlay,
       onSeek: goTo,
     }),
   );
@@ -628,9 +671,9 @@ export function createPlayerView({
         if (event.key === "ArrowRight") next();
         if (event.key === "ArrowLeft") prev();
       },
-      onpointermove: showNav,
-      onpointerdown: showNav,
-      onpointerleave: hideNavSoon,
+      onpointermove: trackPointer,
+      onpointerdown: showNavOnTouch,
+      onpointerleave: () => pointerNearNav(false),
     },
     backdropEl,
   );
@@ -684,6 +727,7 @@ export function createPlayerView({
     },
     setHotspotStyle(style) {
       overlay.setStyle(style);
+      updateAccent();
       const step = currentStepRef;
       if (!step || !isPhotoStep(step) || !step.hotspot) return;
       const { bgColor, textColor } = overlay.colors(step.hotspot);
